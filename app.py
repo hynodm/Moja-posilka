@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Adresa tvojej tabuľky
+# Adresa tvojej tabulky
 URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpmdc8s9qPhQjTRUfzHcGTxeIySehyh8/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -23,16 +23,12 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         try:
             dnes = datetime.now().strftime("%d.%m.%Y")
-            # Načítanie dát
             df = conn.read(spreadsheet=URL)
             
-            # OPRAVENÉ NÁZVY STĹPCOV (presne podľa tvojej tabuľky)
             new_data = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
                                    columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
             
             updated_df = pd.concat([df, new_data], ignore_index=True)
-            
-            # Zápis do Google
             conn.update(spreadsheet=URL, data=updated_df)
             st.success("✅ TERAZ TO UŽ MUSÍ BYŤ V TABUĽKE!")
         except Exception as e:
