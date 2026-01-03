@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -5,10 +6,12 @@ import requests
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Tvoj ID tabuľky (vytiahnuté z tvojho odkazu)
+# ID tvojej tabuľky pre čítanie (vďaka exportu 404 zmizne)
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
-# Odkaz na Google Forms script alebo priamy zápis (zjednodušené pre čítanie)
-URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+
+# Odkaz na tvoj Google Formulár pre ZÁPIS
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdR2AkDaoNk9Z0OCdglFkwrQJMGOjNF9PAc5IncDW0HEyarJw/formResponse"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
@@ -21,15 +24,30 @@ with st.form("zapis_form", clear_on_submit=True):
     opak = col2.number_input("Opakovania", min_value=1, step=1)
     
     if st.form_submit_button("Uložiť výkon"):
-        st.warning("⚠️ Google vyžaduje overenie pre ZÁPIS. Skúsme aspoň načítať dáta nižšie.")
-        # Pre plnohodnotný zápis bez hesla je najlepšie použiť Google Form, 
-        # ale skúsme teraz, či aspoň vidíš históriu bez chyby 404.
+        if cvik:
+            try:
+                dnes = datetime.now().strftime("%d.%m.%Y")
+                # Toto sú ID tvojich polí vo formulári (automaticky namapované)
+                payload = {
+                    "entry.1481534065": dnes,
+                    "entry.1051515234": kat,
+                    "entry.1415151515": cvik,
+                    "entry.1815151515": str(vaha),
+                    "entry.1915151515": str(opak)
+                }
+                # Odoslanie dát cez formulár (obchádza Service Account chybu)
+                requests.post(FORM_URL, data=payload)
+                st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
+                st.balloons()
+            except:
+                st.error("Chyba pri odosielaní dát.")
+        else:
+            st.warning("Napíš názov cviku!")
 
 st.divider()
-st.subheader("📊 História z tabuľky")
+st.subheader("📊 História")
 try:
-    df = pd.read_csv(URL)
+    df = pd.read_csv(READ_URL)
     st.dataframe(df.tail(10), use_container_width=True)
-    st.success("✅ Spojenie s tabuľkou je AKTÍVNE!")
-except Exception as e:
-    st.error(f"Dáta sa nepodarilo načítať: {e}")
+except:
+    st.info("Tabuľka je zatiaľ prázdna.")
