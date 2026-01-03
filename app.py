@@ -1,4 +1,3 @@
-
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
@@ -6,8 +5,8 @@ from datetime import datetime
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Adresa upravená pre priamy export (rieši chybu 404)
-URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpmdc8s9qPhQjTRUfzHcGTxeIySehyh8/export?format=csv"
+# Tvoja adresa z PC (upravená v kóde pre stabilitu)
+URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -24,25 +23,28 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         try:
             dnes = datetime.now().strftime("%d.%m.%Y")
-            # Načítanie dát
+            
+            # Načítanie existujúcich dát
             df = conn.read(spreadsheet=URL)
             
-            # Príprava nového riadku (presná zhoda s tvojou tabuľkou)
+            # Vytvorenie nového riadku
             new_data = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
                                    columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
             
-            # Spojenie dát a aktualizácia
+            # Spojenie a odoslanie do Google Sheets
             updated_df = pd.concat([df, new_data], ignore_index=True)
             conn.update(spreadsheet=URL, data=updated_df)
-            st.success("✅ ÚSPEŠNE ZAPÍSANÉ DO GOOGLE!")
+            st.success("✅ ÚSPEŠNE ZAPÍSANÉ DO TABUĽKY!")
         except Exception as e:
             st.error(f"Chyba pri zápise: {e}")
 
 st.divider()
-st.subheader("📊 História z Google Cloudu")
+st.subheader("📊 Dáta z Google Cloudu")
 try:
-    # Zobrazenie posledných 10 záznamov
     history = conn.read(spreadsheet=URL)
-    st.dataframe(history.tail(10), use_container_width=True)
-except:
-    st.info("Tabuľka v cloude je prázdna alebo nedostupná.")
+    if not history.empty:
+        st.dataframe(history.tail(10), use_container_width=True)
+    else:
+        st.info("Tabuľka je zatiaľ prázdna.")
+except Exception as e:
+    st.error(f"Nepodarilo sa načítať dáta: {e}")
