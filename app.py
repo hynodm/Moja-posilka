@@ -6,9 +6,12 @@ import requests
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# ID tvojej tabuľky pre čítanie (vďaka exportu 404 zmizne)
+# ID tvojej tabuľky "Gym data"
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
-READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+
+# Odkaz na čítanie konkrétneho hárka "Form Responses 1" (gid=1264353483)
+# Toto zabezpečí, že v aplikácii uvidíš to, čo prišlo cez formulár
+READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=1264353483"
 
 # Odkaz na tvoj Google Formulár pre ZÁPIS
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdR2AkDaoNk9Z0OCdglFkwrQJMGOjNF9PAc5IncDW0HEyarJw/formResponse"
@@ -26,8 +29,10 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         if cvik:
             try:
+                # Automatický dátum
                 dnes = datetime.now().strftime("%d.%m.%Y")
-                # Toto sú ID tvojich polí vo formulári (automaticky namapované)
+                
+                # Dáta pre Google formulár
                 payload = {
                     "entry.1481534065": dnes,
                     "entry.1051515234": kat,
@@ -35,19 +40,27 @@ with st.form("zapis_form", clear_on_submit=True):
                     "entry.1815151515": str(vaha),
                     "entry.1915151515": str(opak)
                 }
-                # Odoslanie dát cez formulár (obchádza Service Account chybu)
+                
+                # Odoslanie
                 requests.post(FORM_URL, data=payload)
-                st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
+                st.success("✅ ÚSPEŠNE ZAPÍSANÉ DO GYM DATA!")
                 st.balloons()
+                st.info("Záznam sa v histórii nižšie objaví po obnovení stránky.")
             except:
-                st.error("Chyba pri odosielaní dát.")
+                st.error("Chyba pri komunikácii s Google Formulárom.")
         else:
-            st.warning("Napíš názov cviku!")
+            st.warning("Prosím, vyplň názov cviku!")
 
 st.divider()
-st.subheader("📊 História")
+st.subheader("📊 História tréningov")
+
 try:
+    # Načítanie dát z nového hárka
     df = pd.read_csv(READ_URL)
-    st.dataframe(df.tail(10), use_container_width=True)
-except:
-    st.info("Tabuľka je zatiaľ prázdna.")
+    if not df.empty:
+        # Zobraziť posledných 15 tréningov, najnovšie navrchu
+        st.dataframe(df.tail(15)[::-1], use_container_width=True)
+    else:
+        st.info("Zatiaľ žiadne záznamy v hárku s odpoveďami.")
+except Exception as e:
+    st.info("História sa pripravuje. Skús urobiť prvý zápis a obnoviť aplikáciu.")
