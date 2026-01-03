@@ -5,8 +5,8 @@ from datetime import datetime
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Adresa tvojej tabuľky (uprataná)
-MOJA_TABULKA_URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpmdc8s9qPhQjTRUfzHcGTxeIySehyh8/edit?usp=sharing"
+# Adresa tvojej tabuľky
+URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpmdc8s9qPhQjTRUfzHcGTxeIySehyh8/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -23,21 +23,25 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         try:
             dnes = datetime.now().strftime("%d.%m.%Y")
-            df = conn.read(spreadsheet=MOJA_TABULKA_URL)
+            # Načítanie dát
+            df = conn.read(spreadsheet=URL)
             
+            # OPRAVENÉ NÁZVY STĹPCOV (presne podľa tvojej tabuľky)
             new_data = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
                                    columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
             
             updated_df = pd.concat([df, new_data], ignore_index=True)
-            conn.update(spreadsheet=MOJA_TABULKA_URL, data=updated_df)
-            st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
+            
+            # Zápis do Google
+            conn.update(spreadsheet=URL, data=updated_df)
+            st.success("✅ TERAZ TO UŽ MUSÍ BYŤ V TABUĽKE!")
         except Exception as e:
             st.error(f"Chyba: {e}")
 
 st.divider()
-st.subheader("📊 História z Google Tabuliek")
+st.subheader("📊 Dáta z Google Cloudu")
 try:
-    history_df = conn.read(spreadsheet=MOJA_TABULKA_URL)
-    st.dataframe(history_df.tail(10), use_container_width=True)
+    history = conn.read(spreadsheet=URL)
+    st.dataframe(history.tail(10), use_container_width=True)
 except:
     st.info("Tabuľka je prázdna.")
