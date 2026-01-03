@@ -1,13 +1,11 @@
-
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
-# Nastavenie vzhľadu
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Prepojenie na Google Sheets
+# Prepojenie
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 st.title("🏋️‍♂️ Môj Gym Progres")
@@ -23,27 +21,25 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         dnes = datetime.now().strftime("%d.%m.%Y")
         
-        # Načítanie existujúcich dát z Google tabuľky
+        # Načítanie dát - uisti sa, že v Secrets máš správnu URL v úvodzovkách
         existing_data = conn.read(spreadsheet=st.secrets["gsheets_url"])
         
-        # Pridanie nového tréningu
-        new_row = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
-                               columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
+        # Vytvorenie nového riadku (MUSÍ sa zhodovať so stĺpcami v Google Tabuľke)
+        new_row = pd.DataFrame([[dnes, kat, cvik, vaha]], 
+                               columns=['Dátum', 'Kategória', 'Cvik', 'Váha'])
         
         updated_df = pd.concat([existing_data, new_row], ignore_index=True)
         
-        # Zápis späť do Google Sheets
+        # Zápis do Google
         conn.update(spreadsheet=st.secrets["gsheets_url"], data=updated_df)
-        st.success("Zapísané do Google Tabuliek!")
+        st.success("ZAPÍSANÉ DO GOOGLE TABUĽKY! ✅")
 
 st.divider()
-st.subheader("📈 Tvoj pokrok")
+st.subheader("📈 História z Google")
 
-# Zobrazenie histórie z Google Sheets
 try:
     df = conn.read(spreadsheet=st.secrets["gsheets_url"])
-    if not df.empty:
-        f_df = df[df['Kategória'] == kat]
-        st.dataframe(f_df.tail(15), use_container_width=True)
+    st.dataframe(df.tail(10), use_container_width=True)
 except:
-    st.info("Zatiaľ tu nie sú žiadne dáta. Zapíš svoj prvý cvik!")
+    st.info("Zatiaľ žiadne dáta v Google Tabuľke.")
+    
