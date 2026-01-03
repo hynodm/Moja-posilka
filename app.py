@@ -1,24 +1,19 @@
 
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
-import os
 from datetime import datetime
 
-# Nastavenie aplikácie
+# Nastavenie vzhľadu
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-FILE = 'treningy.csv'
-
-# Ak súbor neexistuje, vytvoríme ho
-if not os.path.exists(FILE):
-    pd.DataFrame(columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania']).to_csv(FILE, index=False)
+# Prepojenie na Google Sheets
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
-# Výber kategórie
 kat = st.radio("Čo dnes cvičíš?", ["Ruky a Nohy", "Ostatné"], horizontal=True)
 
-# Formulár na zápis
 with st.form("zapis_form", clear_on_submit=True):
     cvik = st.text_input("Názov cviku")
     col1, col2 = st.columns(2)
@@ -27,17 +22,28 @@ with st.form("zapis_form", clear_on_submit=True):
     
     if st.form_submit_button("Uložiť výkon"):
         dnes = datetime.now().strftime("%d.%m.%Y")
-        novy_riadok = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
-                                   columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
-        novy_riadok.to_csv(FILE, mode='a', header=False, index=False)
-        st.success("Zapísané!")
+        
+        # Načítanie existujúcich dát z Google tabuľky
+        existing_data = conn.read(spreadsheet=st.secrets["gsheets_url"])
+        
+        # Pridanie nového tréningu
+        new_row = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
+                               columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
+        
+        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        
+        # Zápis späť do Google Sheets
+        conn.update(spreadsheet=st.secrets["gsheets_url"], data=updated_df)
+        st.success("Zapísané do Google Tabuliek!")
 
 st.divider()
-st.subheader("📈 Tvoj progres")
+st.subheader("📈 Tvoj pokrok")
 
-# Zobrazenie histórie
-df = pd.read_csv(FILE)
-if not df.empty:
-    filtered_df = df[df['Kategória'] == kat]
-    st.write(f"Posledné tréningy ({kat}):")
-    st.dataframe(filtered_df.tail(10), use_container_width=True)
+# Zobrazenie histórie z Google Sheets
+try:
+    df = conn.read(spreadsheet=st.secrets["gsheets_url"])
+    if not df.empty:
+        f_df = df[df['Kategória'] == kat]
+        st.dataframe(f_df.tail(15), use_container_width=True)
+except:
+    st.info("Zatiaľ tu nie sú žiadne dáta. Zapíš svoj prvý cvik!")
