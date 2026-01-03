@@ -1,15 +1,14 @@
-
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
+import requests
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Riadok 9: Tvoja adresa upravená tak, aby fungovala v mobile
-URL = "https://docs.google.com/spreadsheets/d/1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8/export?format=csv"
-
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Tvoj ID tabuľky (vytiahnuté z tvojho odkazu)
+SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
+# Odkaz na Google Forms script alebo priamy zápis (zjednodušené pre čítanie)
+URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
@@ -22,25 +21,15 @@ with st.form("zapis_form", clear_on_submit=True):
     opak = col2.number_input("Opakovania", min_value=1, step=1)
     
     if st.form_submit_button("Uložiť výkon"):
-        try:
-            dnes = datetime.now().strftime("%d.%m.%Y")
-            # Načítanie dát cez export formát (rieši chybu 404)
-            df = pd.read_csv(URL)
-            
-            new_data = pd.DataFrame([[dnes, kat, cvik, vaha, opak]], 
-                                   columns=['Dátum', 'Kategória', 'Cvik', 'Váha', 'Opakovania'])
-            
-            updated_df = pd.concat([df, new_data], ignore_index=True)
-            # Zápis späť do tabuľky
-            conn.update(spreadsheet=URL.replace("/export?format=csv", "/edit"), data=updated_df)
-            st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
-        except Exception as e:
-            st.error(f"Chyba pri zápise: {e}")
+        st.warning("⚠️ Google vyžaduje overenie pre ZÁPIS. Skúsme aspoň načítať dáta nižšie.")
+        # Pre plnohodnotný zápis bez hesla je najlepšie použiť Google Form, 
+        # ale skúsme teraz, či aspoň vidíš históriu bez chyby 404.
 
 st.divider()
-st.subheader("📊 História")
+st.subheader("📊 História z tabuľky")
 try:
-    history = pd.read_csv(URL)
-    st.dataframe(history.tail(10), use_container_width=True)
-except:
-    st.info("Tabuľka je prázdna.")
+    df = pd.read_csv(URL)
+    st.dataframe(df.tail(10), use_container_width=True)
+    st.success("✅ Spojenie s tabuľkou je AKTÍVNE!")
+except Exception as e:
+    st.error(f"Dáta sa nepodarilo načítať: {e}")
