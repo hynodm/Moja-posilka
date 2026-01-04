@@ -1,16 +1,14 @@
-
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 import requests
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Odkaz na tvoj NOVÝ formulár "Do posilky"
+# Odkaz na tvoj formulár (Response URL)
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf8M1syqL9A66Tl8MlBm7ntKD1tV8NcYi8WDSc1ewzeXZ7YzA/formResponse"
 
-# ID tvojej novej tabuľky (z tvojho obrázka 1000013554)
-# Ak si vytvoril úplne novú tabuľku, skontroluj, či ID v adrese zostalo rovnaké.
+# Musíme nájsť ID tvojej ÚPLNE NOVEJ tabuľky, ktorú teraz vytvoríš (krok 1 hore)
+# Dočasne používame ID z tvojho posledného odkazu, kým ho neaktualizuješ
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
@@ -27,16 +25,17 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         if cvik:
             try:
-                # Payload s NOVÝMI ID kódmi
+                # Payload s ID kódmi z tvojho odkazu:
+                # Kategória=984639089, Opakovanie=1345757671, Cvik=472178838, Váha=959036654
                 payload = {
-                    "entry.984639089": kat,         # Kategória
-                    "entry.472178838": cvik,        # Cvik
-                    "entry.959036654": str(vaha),   # Váha
-                    "entry.1345757671": str(opak)   # Opakovanie
+                    "entry.984639089": kat,
+                    "entry.472178838": cvik,
+                    "entry.959036654": str(vaha),
+                    "entry.1345757671": str(opak)
                 }
                 
                 requests.post(FORM_URL, data=payload)
-                st.success("✅ ÚSPEŠNE ZAPÍSANÉ DO NOVEJ TABUĽKY!")
+                st.success("✅ ZAPÍSANÉ!")
                 st.balloons()
             except:
                 st.error("Chyba pri zápise.")
@@ -44,15 +43,11 @@ with st.form("zapis_form", clear_on_submit=True):
             st.warning("Napíš názov cviku!")
 
 st.divider()
-st.subheader("📊 História (Nový hárok)")
+st.subheader("📊 História")
 
 try:
-    # Skúsime načítať dáta. Ak si prepojil formulár s existujúcou tabuľkou, 
-    # možno budeme musieť neskôr doladiť gid= číslo.
     df = pd.read_csv(READ_URL)
     if not df.empty:
         st.dataframe(df.tail(15)[::-1], use_container_width=True)
-    else:
-        st.info("Zatiaľ žiadne záznamy.")
 except:
-    st.info("História sa zobrazí po prvom zápise.")
+    st.info("História sa načíta po prvom zápise do novej tabuľky.")
