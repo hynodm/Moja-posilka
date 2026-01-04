@@ -8,13 +8,13 @@ st.set_page_config(page_title="Gym Progres", layout="centered")
 # Tvoja URL adresa z Apps Scriptu
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-y_HEPOihM7d9ifoHk6K3ybAXbmJSjTTrxRBphpPXZtLcedYXi6zo2J0yRRbjHtBv/exec"
 
-# ID tvojej tabuľky pre čítanie histórie
+# ID tabuľky
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
-READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+# Čítame priamo hárok "Odpovede z formulára 1" (gid=1116243306 podľa tvojho obrázka)
+READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=1116243306"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
-# Výber kategórie
 kat = st.radio("Kategória", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
 with st.form("zapis_form", clear_on_submit=True):
@@ -26,36 +26,33 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         if cvik:
             try:
-                # Príprava dát pre Apps Script
                 data = {
                     "kat": kat,
                     "cvik": cvik,
                     "vaha": str(vaha),
                     "opak": str(opak)
                 }
-                # Odoslanie dát priamo do tabuľky
+                # Tu posielame dáta
                 response = requests.post(WEB_APP_URL, data=json.dumps(data))
                 
-                if response.status_code == 200:
-                    st.success("✅ ÚSPEŠNE ZAPÍSANÉ PRIAMO DO TABUĽKY!")
+                if "Success" in response.text:
+                    st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
                     st.balloons()
                 else:
-                    st.error("Chyba: Skript vrátil chybu. Skontroluj nastavenie 'Anyone'.")
+                    st.error(f"Skript odpovedal inak: {response.text}")
             except Exception as e:
-                st.error(f"Chyba pri komunikácii: {e}")
+                st.error(f"Chyba: {e}")
         else:
-            st.warning("Najprv napíš názov cviku!")
+            st.warning("Napíš názov cviku!")
 
 st.divider()
 st.subheader("📊 História tréningov")
 
 try:
-    # Načítanie dát z tabuľky pre zobrazenie v aplikácii
     df = pd.read_csv(READ_URL)
     if not df.empty:
-        # Zobrazenie posledných 15 záznamov, najnovšie navrchu
         st.dataframe(df.tail(15)[::-1], use_container_width=True)
     else:
-        st.info("Tabuľka je zatiaľ prázdna.")
+        st.info("Tabuľka je prázdna.")
 except:
-    st.info("História sa načíta po prvom úspešnom zápise.")
+    st.info("Načítavam históriu...")
