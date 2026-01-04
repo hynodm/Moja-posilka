@@ -2,25 +2,25 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# Nastavenie vzhľadu aplikácie
+# Základné nastavenie stránky
 st.set_page_config(page_title="Gym Progres", layout="centered", page_icon="🏋️‍♂️")
 
 # --- KONFIGURÁCIA ---
 # Tvoja nová URL adresa, ktorú si práve poslal
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxpxivYiEtIZs-TxPyLS6EzWaMRGED-AccSFeDhdSFlSQKIH0pHz3-_OlM6_UJZo0-j/exec"
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbysr9qeRhlMh_jV8E3wpLKp_UM7x2CMVUzlDwT6_EJKejFdfzL_Z92TTPRqr3qCp1Hn/exec"
 
 # ID tvojej tabuľky
 SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVTdSZKMOFq8"
 
-# Odkaz na čítanie dát z hárka "Data"
+# Odkaz na čítanie dát priamo z hárka "Data"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Data"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
-# Výber kategórie tréningu
+# Výber kategórie (prepínač)
 kat = st.radio("Kategória", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
-# Formulár pre zápis výkonu
+# Formulár pre zápis do tabuľky
 with st.form("zapis_form", clear_on_submit=True):
     cvik = st.text_input("Názov cviku")
     col1, col2 = st.columns(2)
@@ -30,37 +30,36 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         if cvik:
             try:
-                # Príprava parametrov pre odoslanie (zhodujú sa s tvojím Apps Scriptom)
+                # Príprava dát na odoslanie
                 params = {
                     "kat": kat,
                     "cvik": cvik,
                     "vaha": str(vaha),
                     "opak": str(opak)
                 }
-                
-                # Odoslanie dát cez GET (odpovedá funkcii doGet v skripte)
+                # Odoslanie požiadavky na tvoj Google Script
                 response = requests.get(WEB_APP_URL, params=params)
                 
                 if "Success" in response.text:
-                    st.success("✅ KONEČNE ZAPÍSANÉ V TABUĽKE!")
+                    st.success("✅ Úspešne zapísané do tabuľky!")
                     st.balloons()
                 else:
-                    st.error(f"Server vrátil odpoveď: {response.text}")
+                    st.error(f"Odpoveď zo skriptu: {response.text}")
             except Exception as e:
-                st.error(f"Chyba spojenia: {e}")
+                st.error(f"Chyba pripojenia: {e}")
         else:
             st.warning("⚠️ Prosím, zadaj názov cviku!")
 
 st.divider()
 st.subheader("📊 História (Hárok Data)")
 
-# Načítanie a zobrazenie histórie z tabuľky
+# Načítanie a zobrazenie histórie
 try:
     df = pd.read_csv(READ_URL)
     if not df.empty:
-        # Zobrazenie posledných záznamov (najnovšie hore)
+        # Zobrazenie posledných 15 záznamov, najnovšie sú navrchu
         st.dataframe(df.tail(15)[::-1], use_container_width=True)
     else:
         st.info("Tabuľka 'Data' je zatiaľ prázdna.")
-except:
-    st.info("⌛ História sa zobrazí po prvom úspešnom zápise.")
+except Exception:
+    st.info("⌛ História sa načíta po prvom úspešnom zápise.")
