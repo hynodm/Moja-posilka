@@ -2,43 +2,63 @@ import streamlit as st
 import pandas as pd
 import requests
 
+# Základné nastavenie aplikácie
 st.set_page_config(page_title="Gym Progres", layout="centered", page_icon="🏋️‍♂️")
 
-# Tvoja aktuálna URL adresa
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbysu2Ks4pfhYJARoZZW-4D5LwD7DKwgBV4PS6hVC7TTOGG5OA6g2LYLLf0VytO2P7yi/exec"
+# --- KONFIGURÁCIA ---
+# Tvoja ÚPLNE NOVÁ adresa, ktorú si práve poslal
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw30cTwq5MCG6HctNjZxbNOQvIbGsUdnop2f9Q44GBPVcXohY4W0uvaZ7VQLYndmJll/exec"
 
+# ID tvojej tabuľky
 SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVTdSZKMOFq8"
+# Odkaz na čítanie dát z hárka "Data"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Data"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
-kat = st.radio("Kategória", ["Ostatné", "Ruky a nohy"], horizontal=True)
+# Výber kategórie
+kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
-with st.form("zapis", clear_on_submit=True):
+# Formulár na zápis
+with st.form("gym_form", clear_on_submit=True):
     cvik = st.text_input("Názov cviku")
-    vaha = st.number_input("Váha (kg)", min_value=0.0, step=2.5)
-    opak = st.number_input("Opakovania", min_value=1, step=1)
+    col1, col2 = st.columns(2)
+    vaha = col1.number_input("Váha (kg)", min_value=0.0, step=2.5)
+    opak = col2.number_input("Opakovania", min_value=1, step=1)
     
-    if st.form_submit_button("Uložiť výkon"):
+    if st.form_submit_button("Uložiť do tabuľky"):
         if cvik:
             try:
-                # Parametre pre Apps Script
-                params = {"kat": kat, "cvik": cvik, "vaha": str(vaha), "opak": str(opak)}
-                res = requests.get(WEB_APP_URL, params=params, timeout=10)
-                if "Success" in res.text:
-                    st.success("✅ Úspešne zapísané!")
+                # Parametre, ktoré posielame do Google Scriptu
+                payload = {
+                    "kat": kat,
+                    "cvik": cvik,
+                    "vaha": str(vaha),
+                    "opak": str(opak)
+                }
+                # Odoslanie dát cez GET požiadavku
+                response = requests.get(WEB_APP_URL, params=payload, timeout=10)
+                
+                if "Success" in response.text:
+                    st.success("✅ Úspešne zapísané do tabuľky!")
                     st.balloons()
                 else:
-                    st.error(f"❌ Server vrátil: {res.text}")
+                    st.error(f"❌ Server vrátil správu: {response.text}")
             except Exception as e:
-                st.error(f"❌ Chyba pripojenia: {e}")
+                st.error(f"❌ Chyba spojenia: {e}")
         else:
             st.warning("⚠️ Zadaj názov cviku!")
 
 st.divider()
+st.subheader("📊 Posledné záznamy")
+
+# Zobrazenie histórie
 try:
     df = pd.read_csv(READ_URL)
     if not df.empty:
+        # Zobrazenie posledných 10 záznamov (najnovšie hore)
         st.dataframe(df.tail(10)[::-1], use_container_width=True)
-except:
-    st.info("⌛ Načítavam históriu...")
+    else:
+        st.info("Tabuľka je zatiaľ prázdna.")
+except Exception:
+    st.info("⌛ História sa zobrazí po prvom úspešnom zápise.")
