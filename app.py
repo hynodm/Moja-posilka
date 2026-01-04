@@ -1,19 +1,20 @@
-
 import streamlit as st
 import pandas as pd
 import requests
+import json
 
 st.set_page_config(page_title="Gym Progres", layout="centered")
 
-# Odkaz na tvoj formulár "Zápis do posilky"
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf8M1syqL9A66Tl8MlBm7ntKD1tV8NcYi8WDSc1ewzeXZ7YzA/formResponse"
+# Tvoja URL adresa z Apps Scriptu
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-y_HEPOihM7d9ifoHk6K3ybAXbmJSjTTrxRBphpPXZtLcedYXi6zo2J0yRRbjHtBv/exec"
 
-# ID tvojej tabuľky (zo súboru Zápis do posilky - Odpovede z formulára 1)
+# ID tvojej tabuľky pre čítanie histórie
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
+# Výber kategórie
 kat = st.radio("Kategória", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
 with st.form("zapis_form", clear_on_submit=True):
@@ -25,33 +26,36 @@ with st.form("zapis_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť výkon"):
         if cvik:
             try:
-                # Payload s ID kódmi upravenými podľa tvojho poradia v tabuľke
-                # Kategória (984639089), Opakovanie (1345757671), Cvik (472178838), Váha (959036654)
-                payload = {
-                    "entry.984639089": kat,         # Stĺpec B: Kategória
-                    "entry.1345757671": str(opak),  # Stĺpec C: Opakovanie
-                    "entry.472178838": cvik,        # Stĺpec D: Cvik
-                    "entry.959036654": str(vaha)    # Stĺpec E: Váha
+                # Príprava dát pre Apps Script
+                data = {
+                    "kat": kat,
+                    "cvik": cvik,
+                    "vaha": str(vaha),
+                    "opak": str(opak)
                 }
+                # Odoslanie dát priamo do tabuľky
+                response = requests.post(WEB_APP_URL, data=json.dumps(data))
                 
-                requests.post(FORM_URL, data=payload)
-                st.success("✅ ZAPÍSANÉ!")
-                st.balloons()
-            except:
-                st.error("Chyba pri zápise.")
+                if response.status_code == 200:
+                    st.success("✅ ÚSPEŠNE ZAPÍSANÉ PRIAMO DO TABUĽKY!")
+                    st.balloons()
+                else:
+                    st.error("Chyba: Skript vrátil chybu. Skontroluj nastavenie 'Anyone'.")
+            except Exception as e:
+                st.error(f"Chyba pri komunikácii: {e}")
         else:
-            st.warning("Napíš názov cviku!")
+            st.warning("Najprv napíš názov cviku!")
 
 st.divider()
-st.subheader("📊 História")
+st.subheader("📊 História tréningov")
 
 try:
-    # Načítame dáta a uistíme sa, že berieme tie správne stĺpce
+    # Načítanie dát z tabuľky pre zobrazenie v aplikácii
     df = pd.read_csv(READ_URL)
     if not df.empty:
-        # Zobraziť len relevantné stĺpce, ak by tam bol chaos
+        # Zobrazenie posledných 15 záznamov, najnovšie navrchu
         st.dataframe(df.tail(15)[::-1], use_container_width=True)
     else:
-        st.info("Tabuľka je prázdna.")
+        st.info("Tabuľka je zatiaľ prázdna.")
 except:
-    st.info("História sa načíta po úspešnom zápise.")
+    st.info("História sa načíta po prvom úspešnom zápise.")
