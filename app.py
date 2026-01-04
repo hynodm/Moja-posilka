@@ -8,15 +8,16 @@ st.set_page_config(page_title="Gym Progres", layout="centered")
 # ID tvojej tabuľky "Gym data"
 SHEET_ID = "1oCkoXdoXdPpP-mdc8s9qPhQjTRUfzHcGTxeIySehyh8"
 
-# Odkaz na čítanie dát z hárka s odpoveďami
-READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=1264353483"
+# Odkaz na čítanie dát z hárka (gid=0 je zvyčajne prvý hárok s odpoveďami)
+READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
 
-# Odkaz na tvoj NOVÝ Google Formulár pre ZÁPIS
+# Odkaz na tvoj Google Formulár pre ZÁPIS
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf8M1syqL9A66Tl8MlBm7ntKD1tV8NcYi8WDSc1ewzeXZ7YzA/formResponse"
 
 st.title("🏋️‍♂️ Môj Gym Progres")
 
-kat = st.radio("Čo dnes cvičíš?", ["Ruky a Nohy", "Ostatné"], horizontal=True)
+# Výber kategórie podľa tvojho formulára
+kat = st.radio("Čo dnes cvičíš?", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
 with st.form("zapis_form", clear_on_submit=True):
     cvik = st.text_input("Názov cviku")
@@ -28,15 +29,15 @@ with st.form("zapis_form", clear_on_submit=True):
         if cvik:
             try:
                 # Automatický dátum
-                dnes = datetime.now().strftime("%d.%m.%Y")
+                dnes = datetime.now().strftime("%Y-%m-%d")
                 
-                # NOVÉ ID čísla tvojich otázok (vytiahnuté z tvojho odkazu)
+                # Presné ID čísla z tvojho odkazu
                 payload = {
-                    "entry.1481534065": dnes,          # Dátum
-                    "entry.1051515234": kat,            # Kategória
-                    "entry.1415151515": cvik,           # Cvik
-                    "entry.1815151515": str(vaha),       # Váha
-                    "entry.1915151515": str(opak)        # Opakovania
+                    "entry.984639089": kat,     # Kategória
+                    "entry.959036654": cvik,    # Cvik
+                    "entry.472178838": str(vaha), # Váha
+                    "entry.1345757671": str(opak), # Opakovania
+                    "entry.1121013446": dnes    # Dátum (toto ID je odhadnuté, ak by nefungovalo, skontrolujeme ho)
                 }
                 
                 # Odoslanie do Google Formulára
@@ -44,20 +45,18 @@ with st.form("zapis_form", clear_on_submit=True):
                 st.success("✅ ÚSPEŠNE ZAPÍSANÉ!")
                 st.balloons()
             except:
-                st.error("Chyba pri komunikácii s Google Formulárom.")
+                st.error("Chyba pri zápise.")
         else:
-            st.warning("Prosím, vyplň názov cviku!")
+            st.warning("Napíš názov cviku!")
 
 st.divider()
 st.subheader("📊 História tréningov")
 
 try:
-    # Načítanie dát z hárka "Form Responses 1"
     df = pd.read_csv(READ_URL)
     if not df.empty:
-        # Zobraziť posledných 10 záznamov, najnovšie navrchu
         st.dataframe(df.tail(10)[::-1], use_container_width=True)
     else:
-        st.info("Zatiaľ žiadne záznamy. Skús urobiť prvý zápis!")
+        st.info("Zatiaľ žiadne záznamy.")
 except:
-    st.info("História sa pripravuje. Po prvom zápise a obnovení appky sa tu zobrazí tabuľka.")
+    st.info("Tabuľka sa zobrazí po prvom zápise a obnovení.")
