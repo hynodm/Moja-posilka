@@ -10,7 +10,7 @@ WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfu0UnPyfyVgCwYB0O4Qthf5
 
 # 2. ADRESA PRE ČÍTANIE (s vynútenou aktualizáciou dát)
 # Používame priamy export do CSV z tvojho konkrétneho hárka (gid=551519505)
-SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVTdSZKMOFq8"
+READ_URL = f"https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVTdSQZKMOFq8/export?format=csv&gid=551519505&cache={int(time.time())}"
 GID = "551519505"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}&cache={int(time.time())}"
 
