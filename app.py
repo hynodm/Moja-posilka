@@ -6,8 +6,8 @@ import requests
 st.set_page_config(page_title="Gym Progres", layout="centered", page_icon="🏋️‍♂️")
 
 # --- KONFIGURÁCIA ---
-# Tvoja ÚPLNE NOVÁ adresa, ktorú si práve poslal
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw30cTwq5MCG6HctNjZxbNOQvIbGsUdnop2f9Q44GBPVcXohY4W0uvaZ7VQLYndmJll/exec"
+# Tvoja najnovšia URL adresa, ktorú si práve poslal
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfu0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21oOZVwJjITiw0sGfVFc/exec"
 
 # ID tvojej tabuľky
 SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVTdSZKMOFq8"
@@ -19,7 +19,7 @@ st.title("🏋️‍♂️ Môj Gym Progres")
 # Výber kategórie
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
-# Formulár na zápis
+# Formulár na zápis výkonu
 with st.form("gym_form", clear_on_submit=True):
     cvik = st.text_input("Názov cviku")
     col1, col2 = st.columns(2)
@@ -29,7 +29,7 @@ with st.form("gym_form", clear_on_submit=True):
     if st.form_submit_button("Uložiť do tabuľky"):
         if cvik:
             try:
-                # Parametre, ktoré posielame do Google Scriptu
+                # Parametre, ktoré posielame (musia presne sedieť s Apps Scriptom)
                 payload = {
                     "kat": kat,
                     "cvik": cvik,
@@ -47,12 +47,12 @@ with st.form("gym_form", clear_on_submit=True):
             except Exception as e:
                 st.error(f"❌ Chyba spojenia: {e}")
         else:
-            st.warning("⚠️ Zadaj názov cviku!")
+            st.warning("⚠️ Prosím, zadaj názov cviku!")
 
 st.divider()
 st.subheader("📊 Posledné záznamy")
 
-# Zobrazenie histórie
+# Zobrazenie histórie z tabuľky
 try:
     df = pd.read_csv(READ_URL)
     if not df.empty:
