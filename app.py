@@ -4,19 +4,16 @@ import requests
 import time
 from datetime import datetime
 
-# Nastavenie širokého rozloženia pre tabuľky vedľa seba
+# Nastavenie širokého rozloženia
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- 1. KONFIGURÁCIA (Presne podľa tvojich screenshotov) ---
+# --- KONFIGURÁCIA (Tvoj overený odkaz z nastavení publikovania) ---
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbu0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21o0ZVwJjI-kYy1M560Nl_S7A/exec"
-SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVtdSQZKMOFq8"
-
-# Najstabilnejšia URL adresa pre stiahnutie CSV
-READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
-# --- 2. FORMULÁR PRE ZÁPIS ---
+# --- 1. FORMULÁR PRE ZÁPIS ---
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
 with st.form("gym_zapis", clear_on_submit=True):
@@ -48,12 +45,12 @@ with st.form("gym_zapis", clear_on_submit=True):
 
 st.markdown("---")
 
-# --- 3. NAČÍTANIE A FILTROVANIE HISTÓRIE ---
+# --- 2. NAČÍTANIE A ZOBRAZENIE DÁT ---
 try:
-    # Načítanie dát s časovou pečiatkou, aby sa obišla vyrovnávacia pamäť
-    df = pd.read_csv(f"{READ_URL}&cache={int(time.time())}")
+    # Načítanie dát s parametrom proti cache pre okamžitú aktualizáciu
+    df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
     
-    # Prevod stĺpca Dátum na spracovateľný formát
+    # Prevod dátumu pre filtrovanie (podpora formátu d.m.Y H:M:S)
     df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
     dnes = datetime.now().date()
 
@@ -62,43 +59,40 @@ try:
     df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
     
     if not df_dnes.empty:
-        # Zobrazenie aktuálneho tréningu
+        # Zobrazenie dnešných výsledkov
         st.dataframe(df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], 
                      use_container_width=True, hide_index=True)
     else:
-        st.info("Dnes si zatiaľ nič nezapísal. Tvoj aktuálny tréning sa zobrazí tu.")
+        st.info("Dnes si zatiaľ nič nezapísal. Tu uvidíš výsledky tvojho aktuálneho tréningu.")
 
     st.markdown("---")
     
-    # --- SEKCIA: HISTÓRIA (LEN PREDCHÁDZAJÚCI DÁTUM) ---
+    # --- SEKCIA: HISTÓRIA (LEN PREDCHÁDZAJÚCI DÁTUM TRÉNINGU) ---
     st.subheader("⏳ História predchádzajúceho tréningu")
     
-    # Len záznamy staršie ako dnes
-    historia_all = df[df['Dátum_dt'].dt.date < dnes]
+    # Vyberieme všetko staršie ako dnes
+    hist_vsetko = df[df['Dátum_dt'].dt.date < dnes]
 
     col1, col2 = st.columns(2)
 
-    with col1:
-        st.markdown("### 💪 Ostatné")
-        h_ost = historia_all[historia_all['Kategória'] == "Ostatné"]
-        if not h_ost.empty:
-            posl_den = h_ost['Dátum_dt'].dt.date.max()
-            vypis = h_ost[h_ost['Dátum_dt'].dt.date == posl_den]
-            st.success(f"Naposledy: {posl_den.strftime('%d.%m.%Y')}")
-            st.table(vypis[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']])
-        else:
-            st.write("Žiadna história.")
+    def zobraz_kategoriu(stlpik, nazov_kat, data):
+        with stlpik:
+            st.markdown(f"### {nazov_kat}")
+            filtrovane = data[data['Kategória'] == nazov_kat]
+            if not filtrovane.empty:
+                # Nájdeme posledný dostupný dátum pre túto kategóriu
+                posledny_den = filtrovane['Dátum_dt'].dt.date.max()
+                vypis = filtrovane[filtrovane['Dátum_dt'].dt.date == posledny_den]
+                
+                st.success(f"Naposledy cvičené: {posledny_den.strftime('%d.%m.%Y')}")
+                # Zobrazenie tabuľky so všetkými stĺpcami, ktoré si žiadal
+                st.table(vypis[['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
+            else:
+                st.write("V tejto kategórii zatiaľ nie je žiadna história.")
 
-    with col2:
-        st.markdown("### 🦵 Ruky a nohy")
-        h_ruky = historia_all[historia_all['Kategória'] == "Ruky a nohy"]
-        if not h_ruky.empty:
-            posl_den = h_ruky['Dátum_dt'].dt.date.max()
-            vypis = h_ruky[h_ruky['Dátum_dt'].dt.date == posl_den]
-            st.success(f"Naposledy: {posl_den.strftime('%d.%m.%Y')}")
-            st.table(vypis[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']])
-        else:
-            st.write("Žiadna história.")
+    zobraz_kategoriu(col1, "Ostatné", hist_vsetko)
+    zobraz_kategoriu(col2, "Ruky a nohy", hist_vsetko)
 
 except Exception as e:
-    st.error(f"Chyba pri načítaní dát: {e}")
+    st.error("Nepodarilo sa načítať históriu. Skontroluj, či je odkaz stále funkčný.")
+    st.caption(f"Technická chyba: {e}")
