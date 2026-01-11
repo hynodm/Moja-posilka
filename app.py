@@ -6,15 +6,16 @@ from datetime import datetime
 
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# 1. ADRESY (Ponechané z tvojho pôvodného kódu)
+# --- 1. OPRAVENÉ ADRESY PODĽA TVOJICH SCREENSHOTOV ---
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbu0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21o0ZVwJjI-kYy1M560Nl_S7A/exec"
+# Tu bolo v predchádzajúcom kóde zrejme zlé ID, toto je skopírované z tvojho URL v prehliadači
 SHEET_ID = "1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWVtdSQZKMOFq8"
 GID = "551519505"
 READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}&cache={int(time.time())}"
 
 st.title("🏋️ Môj Gym Progres")
 
-# Výber kategórie pre aktuálny zápis
+# Výber kategórie
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
 # FORMULÁR PRE ZÁPIS
@@ -49,55 +50,53 @@ st.markdown("---")
 
 # NAČÍTANIE DÁT A LOGIKA ZOBRAZOVANIA
 try:
-    # Načítanie s potlačením cache pre čerstvé dáta
     df = pd.read_csv(READ_URL)
-    # Prevod stĺpca Dátum na datetime objekty pre správne filtrovanie
-    df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True)
+    # Prevod na datetime pre korektné filtrovanie
+    df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
     dnes = datetime.now().date()
 
-    # --- 1. SEKCIA: PRÁVE CVIČÍM ---
-    st.subheader("📝 Práve cvičím (Dnešný záznam)")
+    # --- SEKCIA: PRÁVE CVIČÍM ---
+    st.subheader("📝 Práve cvičím")
     df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
     
     if not df_dnes.empty:
-        # Zobrazenie všetkých stĺpcov pre dnešok
+        # Tu vidíš všetko pre dnešný tréning
         st.dataframe(df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], use_container_width=True, hide_index=True)
     else:
-        st.info("Dnes zatiaľ žiadne záznamy. Tvoj tréning sa zobrazí tu.")
+        st.info("Dnes zatiaľ žiadny zápis.")
 
     st.markdown("---")
-    
-    # --- 2. SEKCIA: HISTÓRIA POSLEDNÝCH TRÉNINGOV ---
     st.subheader("⏳ História predchádzajúceho tréningu")
-    
-    # Filtrujeme len záznamy staršie ako dnes
+
+    # Filtrujeme len staršie tréningy (pred dneškom)
     historia_all = df[df['Dátum_dt'].dt.date < dnes]
 
-    # Rozdelenie na dva stĺpce pre Ostatné a Ruky/nohy
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("💪 Ostatné")
+        st.markdown("### 💪 Ostatné")
         h_ostatne = historia_all[historia_all['Kategória'] == "Ostatné"]
         if not h_ostatne.empty:
-            posledny_datum = h_ostatne['Dátum_dt'].dt.date.max()
-            posledny_trening = h_ostatne[h_ostatne['Dátum_dt'].dt.date == posledny_datum]
-            st.success(f"Posledný tréning: {posledny_datum.strftime('%d.%m.%Y')}")
-            st.table(posledny_trening[['Cvik', 'Váha (kg)', 'Opakovania']])
+            posledny_den = h_ostatne['Dátum_dt'].dt.date.max()
+            vypis = h_ostatne[h_ostatne['Dátum_dt'].dt.date == posledny_den]
+            st.info(f"Naposledy cvičené: {posledny_den.strftime('%d.%m.%Y')}")
+            # Zobrazenie všetkých stĺpcov v histórii
+            st.table(vypis[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']])
         else:
-            st.write("V tejto kategórii zatiaľ nie je žiadna história.")
+            st.write("Žiadna história pre 'Ostatné'.")
 
     with col2:
-        st.subheader("🦵 Ruky a nohy")
+        st.markdown("### 🦵 Ruky a nohy")
         h_ruky = historia_all[historia_all['Kategória'] == "Ruky a nohy"]
         if not h_ruky.empty:
-            posledny_datum = h_ruky['Dátum_dt'].dt.date.max()
-            posledny_trening = h_ruky[h_ruky['Dátum_dt'].dt.date == posledny_datum]
-            st.success(f"Posledný tréning: {posledny_datum.strftime('%d.%m.%Y')}")
-            st.table(posledny_trening[['Cvik', 'Váha (kg)', 'Opakovania']])
+            posledny_den = h_ruky['Dátum_dt'].dt.date.max()
+            vypis = h_ruky[h_ruky['Dátum_dt'].dt.date == posledny_den]
+            st.info(f"Naposledy cvičené: {posledny_den.strftime('%d.%m.%Y')}")
+            # Zobrazenie všetkých stĺpcov v histórii
+            st.table(vypis[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']])
         else:
-            st.write("V tejto kategórii zatiaľ nie je žiadna história.")
+            st.write("Žiadna história pre 'Ruky a nohy'.")
 
 except Exception as e:
-    st.warning("Nepodarilo sa načítať históriu. Skontroluj pripojenie k tabuľke.")
-    st.error(str(e))
+    st.error(f"Nepodarilo sa načítať históriu: {e}")
+    st.info("Skontroluj, či je tabuľka stále 'Publikovaná na webe'.")
