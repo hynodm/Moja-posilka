@@ -8,9 +8,10 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA ---
-# Tvoja aktuálna adresa Apps Scriptu
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbu0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21o0ZVwJjI-kYy1M560Nl_S7A/exec"
-# Tvoj verejný CSV odkaz
+# SEM MUSÍŠ VLOŽIŤ NOVÚ ADRESU, KTORÚ ZÍSKAL V KROKU 2 NIŽŠIE
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycby0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21o0ZVwJjI-kYy1M560Nl_S7A/exec"
+
+# Verejný CSV odkaz
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
 
 st.title("🏋️ Môj Gym Progres")
@@ -29,76 +30,60 @@ with st.form("gym_zapis", clear_on_submit=True):
     
     if st.form_submit_button("ZAPÍSAŤ DO TABUĽKY"):
         if cvik_input:
-            # Payload presne pre JSON.parse v Google Apps Scripte
-            payload = {
+            # Posielame dáta ako klasické parametre v URL (najspoľahlivejšia cesta)
+            params = {
                 "datum": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
                 "kategoria": kat,
                 "cvik": cvik_input,
-                "vaha": float(vaha_input),
-                "opak": int(opak_input)
+                "vaha": vaha_input,
+                "opak": opak_input
             }
             try:
-                # Dôležité: Posielame ako JSON
-                response = requests.post(WEB_APP_URL, json=payload, timeout=10)
-                if "Success" in response.text:
-                    st.success(f"✅ Úspešne zapísané: {cvik_input}")
-                    time.sleep(1.5)
+                # Dôležité: Používame params=params namiesto json=payload
+                response = requests.post(WEB_APP_URL, params=params, timeout=15)
+                
+                if response.status_code == 200:
+                    st.success(f"✅ Zapísané: {cvik_input}")
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"Odpoveď servera: {response.text}")
+                    st.error(f"Chyba: Server vrátil kód {response.status_code}")
             except Exception as e:
-                st.error(f"Chyba pri odosielaní: {e}")
+                st.error(f"Chyba pripojenia: {e}")
         else:
-            st.warning("Prosím, zadaj názov cviku.")
+            st.warning("Zadaj názov cviku!")
 
 st.markdown("---")
 
-# --- 4. NAČÍTANIE A ZOBRAZENIE DÁT ---
+# --- 4. NAČÍTANIE HISTÓRIE ---
 try:
-    # Načítanie s potlačením cache (vynútené čerstvé dáta)
     df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
-    
-    # Prevod dátumu
     df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
     df = df.dropna(subset=['Dátum_dt'])
-    
     dnes = datetime.now().date()
 
-    # --- SEKCIA: PRÁVE CVIČÍM ---
     st.subheader("📝 Práve cvičím")
     df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
     
     if not df_dnes.empty:
-        st.dataframe(
-            df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], 
-            use_container_width=True, 
-            hide_index=True
-        )
+        st.dataframe(df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], use_container_width=True, hide_index=True)
     else:
-        st.info("Dnes zatiaľ žiadny zápis.")
+        st.info("Dnes zatiaľ nič.")
 
     st.markdown("---")
+    st.subheader("⏳ História")
+    hist_all = df[df['Dátum_dt'].dt.date < dnes]
+    c1, c2 = st.columns(2)
+
+    def draw(col, name, data):
+        with col:
+            st.markdown(f"### {name}")
+            f = data[data['Kategória'] == name]
+            if not f.empty:
+                last = f['Dátum_dt'].dt.date.max()
+                st.table(f[f['Dátum_dt'].dt.date == last][['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
     
-    # --- SEKCIA: HISTÓRIA ---
-    st.subheader("⏳ História predchádzajúceho tréningu")
-    historia_all = df[df['Dátum_dt'].dt.date < dnes]
-
-    col1, col2 = st.columns(2)
-
-    def render_history_table(target_col, category_name, source_data):
-        with target_col:
-            st.markdown(f"### {category_name}")
-            category_filtered = source_data[source_data['Kategória'] == category_name]
-            if not category_filtered.empty:
-                last_workout_date = category_filtered['Dátum_dt'].dt.date.max()
-                display_df = category_filtered[category_filtered['Dátum_dt'].dt.date == last_workout_date]
-                st.success(f"Naposledy: {last_workout_date.strftime('%d.%m.%Y')}")
-                st.table(display_df[['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
-            else:
-                st.write("Žiadna história.")
-
-    render_history_table(col1, "Ostatné", historia_all)
-    render_history_table(col2, "Ruky a nohy", historia_all)
-
+    draw(c1, "Ostatné", hist_all)
+    draw(c2, "Ruky a nohy", hist_all)
 except Exception as e:
-    st.error(f"Chyba pri spracovaní dát: {e}")
+    st.error(f"Chyba dát: {e}")
