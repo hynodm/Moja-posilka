@@ -19,80 +19,85 @@ kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 with st.form("gym_zapis", clear_on_submit=True):
     col_a, col_b, col_c = st.columns([2, 1, 1])
     with col_a:
-        cvik = st.text_input("Názov cviku")
+        cvik_input = st.text_input("Názov cviku")
     with col_b:
-        vaha = st.number_input("Váha (kg)", min_value=0.0, step=2.5)
+        vaha_input = st.number_input("Váha (kg)", min_value=0.0, step=0.5)
     with col_c:
-        opak = st.number_input("Opakovania", min_value=1, step=1)
+        opak_input = st.number_input("Opakovania", min_value=0, step=1)
     
     if st.form_submit_button("ZAPÍSAŤ DO TABUĽKY"):
-        if cvik:
+        if cvik_input:
+            # Pripravíme dáta - posielame ich s viacerými názvami kľúčov pre istotu
             payload = {
                 "datum": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
                 "kategoria": kat,
-                "cvik": cvik,
-                "vaha": vaha,
-                "opak": opak
+                "cvik": cvik_input,
+                "vaha": vaha_input,
+                "opak": opak_input,
+                # Pridávame aj slovenské názvy, ak by ich skript vyžadoval
+                "Cvik": cvik_input,
+                "Váha (kg)": vaha_input,
+                "Opakovania": opak_input
             }
             try:
                 response = requests.post(WEB_APP_URL, json=payload, timeout=10)
                 if response.status_code == 200:
-                    st.success(f"✅ Úspešne zapísané: {cvik}")
+                    st.success(f"✅ Zapísané do tabuľky: {cvik_input}")
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"Chyba servera: {response.status_code}")
+                    st.error(f"Chyba komunikácie: {response.status_code}")
             except Exception as e:
-                st.error(f"Nepodarilo sa odoslať dáta: {e}")
+                st.error(f"Chyba: {e}")
         else:
-            st.warning("Prosím, zadaj názov cviku.")
+            st.warning("Zadaj názov cviku.")
 
 st.markdown("---")
 
 # --- 2. NAČÍTANIE A ZOBRAZENIE DÁT ---
 try:
-    # Načítanie s ochranou proti cache
+    # Načítanie čerstvých dát
     df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
     
-    # Prevod dátumu
+    # Prevod dátumu (ošetrenie chýb)
     df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
-    dnes = datetime.now().date()
+    dnesny_den = datetime.now().date()
 
     # --- SEKCIA: PRÁVE CVIČÍM ---
     st.subheader("📝 Práve cvičím")
-    df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
+    # Filtrujeme presne dnešný dátum
+    df_dnes = df[df['Dátum_dt'].dt.date == dnesny_den].sort_values(by='Dátum_dt', ascending=False)
     
     if not df_dnes.empty:
         st.dataframe(
             df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], 
-            use_container_width=True, 
-            hide_index=True
+            use_container_width=True, hide_index=True
         )
     else:
-        st.info("Dnes si zatiaľ nič nezapísal.")
+        st.info("Dnes zatiaľ žiadny záznam. Skús zapísať cvik hore.")
 
     st.markdown("---")
     
     # --- SEKCIA: HISTÓRIA ---
     st.subheader("⏳ História predchádzajúceho tréningu")
-    historia_all = df[df['Dátum_dt'].dt.date < dnes]
+    hist_all = df[df['Dátum_dt'].dt.date < dnesny_den]
 
-    col1, col2 = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    def zobraz_historiu(kam, kategoria_nazov, vsetky_data):
-        with kam:
-            st.markdown(f"### {kategoria_nazov}")
-            kat_data = vsetky_data[vsetky_data['Kategória'] == kategoria_nazov]
-            if not kat_data.empty:
-                posledny_den = kat_data['Dátum_dt'].dt.date.max()
-                vypis = kat_data[kat_data['Dátum_dt'].dt.date == posledny_den]
-                st.success(f"Naposledy: {posledny_den.strftime('%d.%m.%Y')}")
+    def render_history(stlp, meno_kat, data):
+        with stlp:
+            st.markdown(f"### {meno_kat}")
+            filtered = data[data['Kategória'] == meno_kat]
+            if not filtered.empty:
+                last_date = filtered['Dátum_dt'].dt.date.max()
+                vypis = filtered[filtered['Dátum_dt'].dt.date == last_date]
+                st.success(f"Naposledy: {last_date.strftime('%d.%m.%Y')}")
                 st.table(vypis[['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
             else:
-                st.write("Žiadna história.")
+                st.write("Žiadne záznamy.")
 
-    zobraz_historiu(col1, "Ostatné", historia_all)
-    zobraz_historiu(col2, "Ruky a nohy", historia_all)
+    render_history(c1, "Ostatné", hist_all)
+    render_history(c2, "Ruky a nohy", hist_all)
 
 except Exception as e:
-    st.error(f"Chyba pri načítaní dát: {e}")
+    st.error(f"Dáta sa nepodarilo spracovať: {e}")
