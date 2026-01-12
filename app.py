@@ -8,10 +8,10 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA ---
-# Tvoja najnovšia adresa z posledného nasadenia
+# Tvoja adresa, ktorú si mi poslal:
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzALIpwBz7bQTopjLall3W0Gtm7AibN7n2elYPJNc9gVZ1sn1lp-P7IBve3kQ4Upyc2/exec"
 
-# Verejný CSV odkaz (ten ostáva rovnaký)
+# Odkaz na CSV (nemenný)
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
 
 st.title("🏋️ Môj Gym Progres")
@@ -28,9 +28,11 @@ with st.form("gym_zapis", clear_on_submit=True):
     with col_c:
         opak_input = st.number_input("Opakovania", min_value=0, step=1)
     
-    if st.form_submit_button("ZAPÍSAŤ DO TABUĽKY"):
+    submit = st.form_submit_button("ZAPÍSAŤ DO TABUĽKY")
+    
+    if submit:
         if cvik_input:
-            # Dáta posielame ako parametre (e.parameter), čo je najistejší spôsob pre Apps Script
+            # Posielame cez e.parameter (najstabilnejšie)
             params = {
                 "datum": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
                 "kategoria": kat,
@@ -39,15 +41,13 @@ with st.form("gym_zapis", clear_on_submit=True):
                 "opak": opak_input
             }
             try:
-                # Používame params=params pre istotu komunikácie
                 response = requests.post(WEB_APP_URL, params=params, timeout=15)
-                
                 if response.status_code == 200:
-                    st.success(f"✅ Úspešne zapísané: {cvik_input}")
-                    time.sleep(1.5)
+                    st.success(f"✅ Zapísané: {cvik_input}")
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"Chyba: Server vrátil kód {response.status_code}")
+                    st.error(f"Chyba servera: {response.status_code}")
             except Exception as e:
                 st.error(f"Chyba pripojenia: {e}")
         else:
@@ -55,18 +55,18 @@ with st.form("gym_zapis", clear_on_submit=True):
 
 st.markdown("---")
 
-# --- 4. NAČÍTANIE A ZOBRAZENIE DÁT (HISTÓRIA) ---
+# --- 4. NAČÍTANIE A ZOBRAZENIE HISTÓRIE ---
 try:
-    # Načítanie s potlačením cache pre okamžité zobrazenie nových riadkov
+    # Timestamp obchádza cache, aby si hneď videl nový riadok
     df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
     
-    # Prevod dátumu (ošetrenie chýb)
+    # Prevod dátumu a vyčistenie
     df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
     df = df.dropna(subset=['Dátum_dt'])
     
     dnes = datetime.now().date()
 
-    # --- SEKCIA: PRÁVE CVIČÍM ---
+    # --- SEKCIA: DNES ---
     st.subheader("📝 Práve cvičím")
     df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
     
@@ -87,7 +87,20 @@ try:
 
     col1, col2 = st.columns(2)
 
-    def render_history_table(target_col, category_name, source_data):
-        with target_col:
-            st.markdown(f"### {category_name}")
-            category_filtered = source_data[source_data['Kategória'] == category_name
+    def vykresli_historicu(stlpec, meno_kat, data):
+        with stlpec:
+            st.markdown(f"### {meno_kat}")
+            filtrovane = data[data['Kategória'] == meno_kat]
+            if not filtrovane.empty:
+                posledny_den = filtrovane['Dátum_dt'].dt.date.max()
+                tabulka = filtrovane[filtrovane['Dátum_dt'].dt.date == posledny_den]
+                st.success(f"Naposledy: {posledny_den.strftime('%d.%m.%Y')}")
+                st.table(tabulka[['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
+            else:
+                st.write("Žiadna história.")
+
+    vykresli_historicu(col1, "Ostatné", hist_all)
+    vykresli_historicu(col2, "Ruky a nohy", hist_all)
+
+except Exception as e:
+    st.error(f"Chyba pri načítaní dát: {e}")
