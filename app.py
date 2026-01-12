@@ -8,8 +8,8 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA ---
-# Tvoja nová adresa Apps Scriptu
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyXtr0a9zWSuUjlb0GrlqVaXpOKqMqtYunMFzkEjizX451UcdhMLvbbPsvcz3hXRlBv/exec"
+# Tvoja aktuálna adresa Apps Scriptu
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbu0UnPyfyVgCwYB0O4Qthf59UC-v9_Ykjsk3B2NxlwyHt21o0ZVwJjI-kYy1M560Nl_S7A/exec"
 # Tvoj verejný CSV odkaz
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
 
@@ -38,6 +38,7 @@ with st.form("gym_zapis", clear_on_submit=True):
                 "opak": int(opak_input)
             }
             try:
+                # Dôležité: Posielame ako JSON
                 response = requests.post(WEB_APP_URL, json=payload, timeout=10)
                 if "Success" in response.text:
                     st.success(f"✅ Úspešne zapísané: {cvik_input}")
@@ -54,10 +55,10 @@ st.markdown("---")
 
 # --- 4. NAČÍTANIE A ZOBRAZENIE DÁT ---
 try:
-    # Načítanie s potlačením cache pre okamžité zmeny
+    # Načítanie s potlačením cache (vynútené čerstvé dáta)
     df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
     
-    # Prevod dátumu (ošetrenie chýb)
+    # Prevod dátumu
     df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
     df = df.dropna(subset=['Dátum_dt'])
     
