@@ -8,24 +8,32 @@ from datetime import datetime
 # 1. NASTAVENIE STRÁNKY
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- 2. KONFIGURÁCIA ---
-# Zatiaľ dáme čistý odkaz na formulár, kým prepneme zápis na Apps Script,
-# aby ti to hneď fungovalo bez chyby 401:
-URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
-
+# --- KONFIGURÁCIA ---
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
 
 st.title("🏋️ Progres")
 
-# --- 3. FORMULÁR / ZÁPIS ---
+# --- FORMULÁR PRIAMO V APPKE (BEZ GOOGLE FORMULÁRA) ---
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
 
-st.info("Pre stabilný zápis bez chýb 401 otvorte formulár jedným kliknutím:")
-st.markdown(f'<a href="{URL_FORMULARA}" target="_blank" style="text-decoration:none;"><button style="width:100%; padding:12px; cursor:pointer; background-color:#ff4b4b; color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px;">OTVORIŤ FORMULÁR NA ZÁPIS</button></a>', unsafe_allow_html=True)
+with st.form("gym_form", clear_on_submit=True):
+    cvik = st.text_input("Názov cviku")
+    vaha = st.number_input("Váha (kg)", min_value=0.0, step=2.5, format="%.2f")
+    opak = st.number_input("Opakovania", min_value=0, step=1)
+    
+    submitted = st.form_submit_button("ZÁPISAŤ")
+    
+    if submitted:
+        if not cvik:
+            st.warning("Vyplň názov cviku!")
+        else:
+            dnes = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            st.success(f"Zaznamenané: {dnes} | {kat} | {cvik} - {vaha} kg x {opak}")
+            # Tu môžeš doplniť vlastné spracovanie alebo ukladanie
 
 st.divider()
 
-# --- 4. ZOBRAZENIE HISTÓRIE (Tvoja pôvodná logika) ---
+# --- ZOBRAZENIE HISTÓRIE ---
 try:
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(CSV_URL, headers=headers)
