@@ -8,18 +8,18 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
-# Adresa pre odosielanie dát
+# Adresa pre odosielanie dát z formulára
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
 
-# Mapovanie ID políčok z formulára
+# Mapovanie ID políčok z tvojho formulára
 ENTRY_DATUM = "entry.1160346068"
 ENTRY_KATEGORIA = "entry.312830153"
 ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-# Odkaz na CSV pre načítanie histórie (zo záložky "Odpovede z formulára 2" alebo "Data")
-CSV_URL = "TU_VLOZ_SVOJ_NOVY_CSV_ODKAZ"
+# CSV odkaz na záložku "Odpovede z formulára 2"
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLiDDAemHUDJrBs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRM2y4-5c9lqb3-_0/pub?gid=1768652951&single=true&output=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
@@ -65,12 +65,10 @@ st.markdown("---")
 try:
     df = pd.read_csv(CSV_URL)
     
-    # Prispôsobenie názvov stĺpcov z formulára
-    # Google Forms vytvára stĺpce: Časová pečiatka, Dátum, Kategória, Cvik, Váha, Opakovanie
     if not df.empty:
         st.subheader("História cvičení")
         
-        # Filtrovanie podľa kategórie
+        # Zobrazenie stĺpcov
         df_filtered = df[df["Kategória"] == kat] if "Kategória" in df.columns else df
         
         if not df_filtered.empty:
