@@ -17,7 +17,8 @@ ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-CSV_URL = "https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWvTDSQZKMOFq8/gviz/tq?tqx=out:csv&sheet=Odpovede%20z%20formul%C3%A1ra%202"
+CSV_URL = "https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWvTDSQZKMOFq8/export?format=csv&gid=1768652951"
+
 
 st.title("🏋️ Môj Gym Progres")
 
