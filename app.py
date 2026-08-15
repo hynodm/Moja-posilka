@@ -17,8 +17,8 @@ ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-# Priamy funkčný CSV export cez Google Visualization API (gid=1768652951 = Odpovede z formulára 2)
-CSV_URL = "https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWvTDSQZKMOFq8/gviz/tq?tqx=out:csv&gid=1768652951"
+# Priamy funkčný CSV export z publikovanej tabuľky
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
