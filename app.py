@@ -17,7 +17,6 @@ ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-# Priamy funkčný CSV export z publikovanej tabuľky
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
 
 st.title("🏋️ Progres")
@@ -68,33 +67,32 @@ try:
         df.columns = [str(c).strip().replace('"', '') for c in df.columns]
         
         date_col = df.columns[0]
-        kat_col = next((c for c in df.columns if "kateg" in c.lower()), df.columns[1])
         
-        # Zoberieme dátum posledného riadku v tabuľke
+        # Zoberieme dátum posledného riadku
         posledny_riadok_datum = str(df.iloc[-1][date_col]).split(" ")[0]
         df_today = df[df[date_col].astype(str).str.startswith(posledny_riadok_datum)]
 
         st.subheader(f"📅 Záznamy z posledného tréningu ({posledny_riadok_datum})")
 
-        # Rozbalovacie okno, kde uvidíš úplne všetko
-        with st.expander("🔍 Zobraziť všetky cviky z posledného dňa naraz", expanded=True):
-            st.dataframe(df_today, use_container_width=True)
+        # Spojíme celý riadok do jedného textu, aby sme spoľahlivo našli kategóriu kdekoľvek
+        df_text = df_today.astype(str).agg(' '.join, axis=1).str.lower()
+        
+        df_ruky = df_today[df_text.str.contains("ruky", na=False)]
+        df_ost = df_today[~df_text.str.contains("ruky", na=False)] # Všetko ostatné
 
         tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
         
         with tab1:
-            df_ruky = df_today[df_today[kat_col].astype(str).str.contains("ruky", case=False, na=False)]
             if not df_ruky.empty:
                 st.dataframe(df_ruky, use_container_width=True)
             else:
-                st.info("Žiadne záznamy v kategórii 'Ruky a nohy'.")
+                st.info("Žiadne záznamy pre 'Ruky a nohy'.")
                 
         with tab2:
-            df_ost = df_today[df_today[kat_col].astype(str).str.contains("ostat", case=False, na=False)]
             if not df_ost.empty:
                 st.dataframe(df_ost, use_container_width=True)
             else:
-                st.info("Žiadne záznamy v kategórii 'Ostatné'.")
+                st.info("Žiadne záznamy pre 'Ostatné'.")
             
     else:
         st.error(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}).")
