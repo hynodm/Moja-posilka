@@ -20,7 +20,7 @@ ENTRY_OPAK = "entry.166466953"
 # Priamy funkčný CSV export z publikovanej tabuľky
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
 
-st.title("Progres")
+st.title("🏋️ Progres")
 
 # --- 3. FORMULÁR PRE ZÁPIS ---
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
@@ -70,8 +70,15 @@ try:
         date_col = df.columns[0]
         kat_col = next((c for c in df.columns if "kateg" in c.lower()), df.columns[1])
         
+        # Zoberieme dátum posledného riadku v tabuľke
         posledny_riadok_datum = str(df.iloc[-1][date_col]).split(" ")[0]
         df_today = df[df[date_col].astype(str).str.startswith(posledny_riadok_datum)]
+
+        st.subheader(f"📅 Záznamy z posledného tréningu ({posledny_riadok_datum})")
+
+        # Rozbalovacie okno, kde uvidíš úplne všetko
+        with st.expander("🔍 Zobraziť všetky cviky z posledného dňa naraz", expanded=True):
+            st.dataframe(df_today, use_container_width=True)
 
         tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
         
@@ -80,14 +87,15 @@ try:
             if not df_ruky.empty:
                 st.dataframe(df_ruky, use_container_width=True)
             else:
-                st.info(f"Žiadne záznamy pre 'Ruky a nohy' z dňa {posledny_riadok_datum}.")
+                st.info("Žiadne záznamy v kategórii 'Ruky a nohy'.")
                 
         with tab2:
             df_ost = df_today[df_today[kat_col].astype(str).str.contains("ostat", case=False, na=False)]
             if not df_ost.empty:
                 st.dataframe(df_ost, use_container_width=True)
             else:
-                st.info(f"Žiadne záznamy pre 'Ostatné' z dňa {posledny_riadok_datum}.")
+                st.info("Žiadne záznamy v kategórii 'Ostatné'.")
+            
     else:
         st.error(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}).")
 
