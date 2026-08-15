@@ -44,13 +44,17 @@ with st.form("gym_form", clear_on_submit=True):
                 ENTRY_OPAK: str(opak)
             }
             try:
-                res = requests.post(FORM_URL, data=payload)
-                res.raise_for_status()
-                st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
-                time.sleep(1)
-                st.rerun()
+                headers = {"User-Agent": "Mozilla/5.0"}
+                res = requests.post(FORM_URL, data=payload, headers=headers)
+                # Google Forms často vracia 200 alebo 305/302 pri úspešnom odoslaní
+                if res.status_code in [200, 302, 303]:
+                    st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error(f"Chyba pri zápise: HTTP {res.status_code}")
             except Exception as e:
-                st.error(f"Chyba pri zápise: {e}")
+                st.error(f"Chyba spojenia: {e}")
 
 st.divider()
 
@@ -76,14 +80,14 @@ try:
         if not cat_column:
             cat_column = df.columns[1]
 
-        # Dáta pre Ostatné (zoberú úplne posledný deň)
+        # Dáta pre Ostatné
         posledny_riadok_datum = str(df.iloc[-1][date_col]).split(" ")[0]
         df_today = df[df[date_col].astype(str).str.startswith(posledny_riadok_datum)]
         df_ost = df_today[df_today[cat_column].astype(str).str.contains("ostat", case=False, na=False)]
         if df_ost.empty:
-            df_ost = df_today # poistka
+            df_ost = df_today
 
-        # Dáta pre Ruky a nohy (hľadáme posledný deň, kedy sa cvičili ruky/nohy)
+        # Dáta pre Ruky a nohy
         df_ruky_all = df[df[cat_column].astype(str).str.contains("ruky", case=False, na=False)]
         if not df_ruky_all.empty:
             posledny_datum_ruky = str(df_ruky_all.iloc[-1][date_col]).split(" ")[0]
