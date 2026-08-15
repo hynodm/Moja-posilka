@@ -6,14 +6,14 @@ import io
 # 1. NASTAVENIE STRÁNKY
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- TVOJE SKUTOČNÉ ADRESY ---
+# --- TVOJE SPRÁVNE ADRESY ---
 URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
 
 st.title("🏋️ Gym Progres - Stabilný prístup")
 
 # --- HLAVNÁ ČASŤ ---
-st.info("Aplikácia teraz využíva oficiálny formulár na zápis a priamo načítava dáta z tabuľky, čím obchádza akékoľvek blokovanie.")
+st.info("Aplikácia využíva oficiálny formulár na zápis a priamo načítava dáta z publikovanej tabuľky.")
 
 col1, col2 = st.columns(2)
 
@@ -24,7 +24,7 @@ with col1:
 
 with col2:
     st.subheader("Rýchly náhľad tabuľky")
-    st.write("Tu vidíš aktuálne dáta načítané priamo z tvojho Google dokumentu:")
+    st.write("Aktuálne dáta načítané z tvojho dokumentu:")
 
 st.divider()
 
@@ -38,6 +38,6 @@ try:
         df = pd.read_csv(csv_data)
         st.dataframe(df, use_container_width=True)
     else:
-        st.warning("Zatiaľ sa nepodarilo načítať dáta z tabuľky.")
+        st.warning(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}). Uistite sa, že hárkový list je zverejnený ako CSV.")
 except Exception as e:
     st.error(f"Chyba pri načítavaní: {e}")
