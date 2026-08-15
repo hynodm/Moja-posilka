@@ -9,7 +9,8 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
+# Použijeme pôvodnú URL formulára (zmeň len koniec z formResponse na formResponse alebo nechaj ako je, zápis spravíme cez GET)
+BASE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
 
 ENTRY_DATUM = "entry.1160346068"
 ENTRY_KATEGORIA = "entry.312830153"
@@ -36,18 +37,21 @@ with st.form("gym_form", clear_on_submit=True):
             st.warning("Vyplň názov cviku!")
         else:
             dnes = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            payload = {
+            
+            # Parametre pre GET požiadavku (obíde blokovanie 401 aj Apps Script)
+            params = {
                 ENTRY_DATUM: dnes,
                 ENTRY_KATEGORIA: kat,
                 ENTRY_CVIK: cvik,
                 ENTRY_VAHA: str(vaha),
-                ENTRY_OPAK: str(opak)
+                ENTRY_OPAK: str(opak),
+                "submit": "Submit"
             }
             try:
                 headers = {"User-Agent": "Mozilla/5.0"}
-                res = requests.post(FORM_URL, data=payload, headers=headers)
-                # Google Forms často vracia 200 alebo 305/302 pri úspešnom odoslaní
-                if res.status_code in [200, 302, 303]:
+                res = requests.get(BASE_FORM_URL, params=params, headers=headers)
+                
+                if res.status_code == 200:
                     st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
                     time.sleep(1)
                     st.rerun()
@@ -70,7 +74,6 @@ try:
         
         date_col = df.columns[0]
         
-        # Nájdeme stĺpec kategórie
         cat_column = None
         for col in df.columns:
             vals = df[col].astype(str).str.lower()
@@ -80,14 +83,12 @@ try:
         if not cat_column:
             cat_column = df.columns[1]
 
-        # Dáta pre Ostatné
         posledny_riadok_datum = str(df.iloc[-1][date_col]).split(" ")[0]
         df_today = df[df[date_col].astype(str).str.startswith(posledny_riadok_datum)]
         df_ost = df_today[df_today[cat_column].astype(str).str.contains("ostat", case=False, na=False)]
         if df_ost.empty:
             df_ost = df_today
 
-        # Dáta pre Ruky a nohy
         df_ruky_all = df[df[cat_column].astype(str).str.contains("ruky", case=False, na=False)]
         if not df_ruky_all.empty:
             posledny_datum_ruky = str(df_ruky_all.iloc[-1][date_col]).split(" ")[0]
