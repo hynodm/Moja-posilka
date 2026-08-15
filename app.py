@@ -7,12 +7,19 @@ from datetime import datetime
 # 1. NASTAVENIE STRÁNKY
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- 2. KONFIGURÁCIA ---
-# Tvoja adresa, ktorú si mi poslal:
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxh5WedRqYYAJnvLXQl_OXSLp1t0i0A6QTp2nZNWWFc9YgrrOmdfMC0RORD_v-xuDcFzA/exec"
+# --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
+# Adresa pre odosielanie dát do formulára
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
 
-# Odkaz na CSV (nemenný)
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
+# Mapovanie ID políčok z tvojho formulára
+ENTRY_DATUM = "entry.1160346068"
+ENTRY_KATEGORIA = "entry.312830153"
+ENTRY_CVIK = "entry.83240949"
+ENTRY_VAHA = "entry.1078103613"
+ENTRY_OPAK = "entry.166466953"
+
+# Odkaz na CSV pre načítanie histórie (pôvodný)
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLiDDAemHUDJrBs4brpOvaMqO_Bzbn3pkMhq64HFU_1QJqRMbGVeKpx66m01aH_02pG3Nsc3j-4f51/pub?output=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
@@ -27,80 +34,83 @@ with st.form("gym_zapis", clear_on_submit=True):
         vaha_input = st.number_input("Váha (kg)", min_value=0.0, step=0.5)
     with col_c:
         opak_input = st.number_input("Opakovania", min_value=0, step=1)
-    
-    submit = st.form_submit_button("ZAPÍSAŤ DO TABUĽKY")
-    
-    if submit:
-        if cvik_input:
-            # Posielame cez e.parameter (najstabilnejšie)
-            params = {
-                "datum": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
-                "kategoria": kat,
-                "cvik": cvik_input,
-                "vaha": vaha_input,
-                "opak": opak_input
-            }
-            try:
-                response = requests.post(WEB_APP_URL, params=params, timeout=15)
-                if response.status_code == 200:
-                    st.success(f"✅ Zapísané: {cvik_input}")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error(f"Chyba servera: {response.status_code}")
-            except Exception as e:
-                st.error(f"Chyba pripojenia: {e}")
-        else:
-            st.warning("Zadaj názov cviku!")
+        
+    submit = st.form_submit_button("ZÁPISAŤ DO TABUĽKY")
 
-st.markdown("---")
-
-# --- 4. NAČÍTANIE A ZOBRAZENIE HISTÓRIE ---
-try:
-    # Timestamp obchádza cache, aby si hneď videl nový riadok
-    df = pd.read_csv(f"{CSV_URL}&t={int(time.time())}")
-    
-    # Prevod dátumu a vyčistenie
-    df['Dátum_dt'] = pd.to_datetime(df['Dátum'], dayfirst=True, errors='coerce')
-    df = df.dropna(subset=['Dátum_dt'])
-    
-    dnes = datetime.now().date()
-
-    # --- SEKCIA: DNES ---
-    st.subheader("📝 Práve cvičím")
-    df_dnes = df[df['Dátum_dt'].dt.date == dnes].sort_values(by='Dátum_dt', ascending=False)
-    
-    if not df_dnes.empty:
-        st.dataframe(
-            df_dnes[['Dátum', 'Kategória', 'Cvik', 'Váha (kg)', 'Opakovania']], 
-            use_container_width=True, 
-            hide_index=True
-        )
+if submit:
+    if not cvik_input.strip():
+        st.warning("⚠️ Vyplň názov cviku!")
     else:
-        st.info("Dnes si zatiaľ nič nezapísal.")
-
-    st.markdown("---")
-    
-    # --- SEKCIA: HISTÓRIA ---
-    st.subheader("⏳ História predchádzajúceho tréningu")
-    hist_all = df[df['Dátum_dt'].dt.date < dnes]
-
-    col1, col2 = st.columns(2)
-
-    def vykresli_historicu(stlpec, meno_kat, data):
-        with stlpec:
-            st.markdown(f"### {meno_kat}")
-            filtrovane = data[data['Kategória'] == meno_kat]
-            if not filtrovane.empty:
-                posledny_den = filtrovane['Dátum_dt'].dt.date.max()
-                tabulka = filtrovane[filtrovane['Dátum_dt'].dt.date == posledny_den]
-                st.success(f"Naposledy: {posledny_den.strftime('%d.%m.%Y')}")
-                st.table(tabulka[['Dátum', 'Cvik', 'Váha (kg)', 'Opakovania']])
+        dnes = datetime.now().strftime("%Y-%m-%d")
+        
+        # Dáta v štruktúre pre Google Formulár
+        form_data = {
+            ENTRY_DATUM: dnes,
+            ENTRY_KATEGORIA: kat,
+            ENTRY_CVIK: cvik_input.strip(),
+            ENTRY_VAHA: str(vaha_input),
+            ENTRY_OPAK: str(opak_input)
+        }
+        
+        try:
+            res = requests.post(FORM_URL, data=form_data)
+            if res.status_code == 200:
+                st.success(f"✅ Uložené: {cvik_input} - {vaha_input} kg x {opak_input}")
+                time.sleep(1)
+                st.rerun()
             else:
-                st.write("Žiadna história.")
+                st.error(f"Chyba servera: {res.status_code}")
+        except Exception as e:
+            st.error(f"Chyba spojenia: {e}")
 
-    vykresli_historicu(col1, "Ostatné", hist_all)
-    vykresli_historicu(col2, "Ruky a nohy", hist_all)
+st.divider()
+
+# --- 4. ZOZNAM A HISTÓRIA CVIKOV ---
+def vykresli_historiu(df, nadpis):
+    st.subheader(nadpis)
+    
+    cviky = sorted(df['Cvik'].dropna().unique())
+    vybrany_cvik = st.selectbox(f"Vyber cvik ({nadpis})", cviky, key=f"sel_{nadpis}")
+    
+    if vybrany_cvik:
+        df_cvik = df[df['Cvik'] == vybrany_cvik].copy()
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.write("📋 **Míľniky (Max Váha):**")
+            max_vahy = df_cvik.groupby('Váha')['Dátum'].min().reset_index()
+            max_vahy = max_vahy.sort_values(by='Váha', ascending=False)
+            st.dataframe(max_vahy, hide_index=True, use_container_width=True)
+            
+        with col2:
+            st.write("📈 **Progres váhy v čase:**")
+            chart_data = df_cvik.groupby('Dátum')['Váha'].max().reset_index()
+            st.line_chart(chart_data, x='Dátum', y='Váha')
+            
+        st.write("📜 **Kompletná história cviku:**")
+        st.dataframe(df_cvik[['Dátum', 'Váha', 'Opakovanie']].sort_values(by='Dátum', ascending=False), hide_index=True, use_container_width=True)
+
+try:
+    data = pd.read_csv(CSV_URL)
+    data.columns = [c.strip() for c in data.columns]
+    
+    # Filtrovanie kategórií
+    df_ruky_nohy = data[data['Kategória'] == 'Ruky a nohy']
+    df_ostatne = data[data['Kategória'] != 'Ruky a nohy']
+    
+    tab1, tab2 = st.tabs(["💪 Ruky a nohy", "🥊 Ostatné"])
+    
+    with tab1:
+        if not df_ruky_nohy.empty:
+            vykresli_historiu(df_ruky_nohy, "Ruky a nohy")
+        else:
+            st.info("Žiadne dáta v kategórii Ruky a nohy.")
+            
+    with tab2:
+        if not df_ostatne.empty:
+            vykresli_historiu(df_ostatne, "Ostatné")
+        else:
+            st.info("Žiadne dáta v kategórii Ostatné.")
 
 except Exception as e:
-    st.error(f"Chyba pri načítaní dát: {e}")
+    st.error(f"Nepodarilo sa načítať históriu z Google Tabuľky: {e}")
