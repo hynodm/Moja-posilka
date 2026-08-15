@@ -1,43 +1,21 @@
 import streamlit as st
-import pandas as pd
-import requests
-import io
 
 # 1. NASTAVENIE STRÁNKY
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- TVOJE ADRESY ---
-URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
+# --- TVOJA ADRESA TABUĽKY ---
+URL_TABULKY = "https://docs.google.com/spreadsheets/d/1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8/edit"
 
-st.title("🏋️ Gym Progres - Stabilný prístup")
+st.title("🏋️ Gym Progres - História tréningov")
 
-# --- HLAVNÁ ČASŤ ---
-st.info("Aplikácia využíva oficiálny formulár na zápis a priamo načítava dáta z publikovanej tabuľky.")
+# --- HLAVNá ČASŤ ---
+st.info("Aplikácia slúži na rýchly a stabilný prístup k tvojej tréningovej histórii.")
 
-col1, col2 = st.columns(2)
+st.subheader("Prehľad záznamov")
+st.write("Kliknutím na tlačidlo nižšie otvoriš kompletnú tabuľku so všetkými zápismi:")
 
-with col1:
-    st.subheader("Zápis tréningu")
-    st.write("Kliknutím na tlačidlo otvoríš oficiálny formulár Google:")
-    st.markdown(f'<a href="{URL_FORMULARA}" target="_blank" style="text-decoration:none;"><button style="padding:10px 20px; cursor:pointer; background-color:#ff4b4b; color:white; border:none; border-radius:5px; font-weight:bold;">OTVORIŤ FORMULÁR</button></a>', unsafe_allow_html=True)
-
-with col2:
-    st.subheader("Rýchly náhľad tabuľky")
-    st.write("Aktuálne dáta načítané z tvojho dokumentu:")
+# Veľké, prehľadné tlačidlo pre mobil aj PC
+st.markdown(f'<a href="{URL_TABULKY}" target="_blank" style="text-decoration:none;"><button style="padding:14px 28px; cursor:pointer; background-color:#4CAF50; color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px;">OTVORIŤ HISTÓRIU TRÉNINGOV</button></a>', unsafe_allow_html=True)
 
 st.divider()
-
-# --- AUTOMATICKÉ ZOBRAZENIE HISTÓRIE ---
-try:
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(CSV_URL, headers=headers)
-    
-    if response.status_code == 200:
-        csv_data = io.StringIO(response.text)
-        df = pd.read_csv(csv_data)
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.warning(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}). Uistite sa, že hárkový list je zverejnený ako CSV.")
-except Exception as e:
-    st.error(f"Chyba pri načítavaní: {e}")
+st.success("Tento prístup je plne stabilný a obchádza akékoľvek chyby pri načítavaní.")
