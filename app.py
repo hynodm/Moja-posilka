@@ -9,7 +9,7 @@ st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA ---
 # Tvoja adresa, ktorú si mi poslal:
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzALIpwBz7bQTopjLall3W0Gtm7AibN7n2elYPJNc9gVZ1sn1lp-P7IBve3kQ4Upyc2/exec"
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzv1MRrYC2dYAtMoAGXXJTs5wjtmqF997QFbqfMo8ECvqv6SylTrJb6Obn5yaBAif999g/exec"
 
 # Odkaz na CSV (nemenný)
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?output=csv"
