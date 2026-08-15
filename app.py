@@ -17,8 +17,8 @@ ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-CSV_URL = "https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWvTDSQZKMOFq8/export?format=csv&gid=1768652951"
-
+# Priamy funkčný CSV export cez Google Visualization API (gid=1768652951 = Odpovede z formulára 2)
+CSV_URL = "https://docs.google.com/spreadsheets/d/1K81rRIVLwfOKGap8d-1_ERdJVo8CBTWvTDSQZKMOFq8/gviz/tq?tqx=out:csv&gid=1768652951"
 
 st.title("🏋️ Môj Gym Progres")
 
@@ -59,14 +59,13 @@ st.divider()
 
 # --- 4. ZOBRAZENIE HISTÓRIE ---
 try:
-    # Stiahnutie CSV obsahu pomocou requests
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(CSV_URL, headers=headers)
     
     if response.status_code == 200:
         csv_data = io.StringIO(response.text)
         df = pd.read_csv(csv_data)
-        df.columns = [c.strip() for c in df.columns]
+        df.columns = [c.strip().replace('"', '') for c in df.columns]
         
         col_map = {}
         for c in df.columns:
@@ -84,14 +83,16 @@ try:
         with tab1:
             df_ruky = df[df["Kategória"] == "Ruky a nohy"] if "Kategória" in df.columns else pd.DataFrame()
             if not df_ruky.empty:
-                st.dataframe(df_ruky[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
+                cols_to_show = [c for c in ["Dátum", "Cvik", "Váha (kg)", "Opakovania"] if c in df_ruky.columns]
+                st.dataframe(df_ruky[cols_to_show], use_container_width=True)
             else:
                 st.info("Žiadne dáta v kategórii Ruky a nohy.")
                 
         with tab2:
             df_ost = df[df["Kategória"] == "Ostatné"] if "Kategória" in df.columns else pd.DataFrame()
             if not df_ost.empty:
-                st.dataframe(df_ost[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
+                cols_to_show = [c for c in ["Dátum", "Cvik", "Váha (kg)", "Opakovania"] if c in df_ost.columns]
+                st.dataframe(df_ost[cols_to_show], use_container_width=True)
             else:
                 st.info("Žiadne dáta v kategórii Ostatné.")
     else:
