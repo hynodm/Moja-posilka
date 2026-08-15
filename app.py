@@ -19,7 +19,7 @@ ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
 # CSV odkaz na záložku "Odpovede z formulára 2"
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLiDDAemHUDJrBs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRM2y4-5c9lqb3-_0/pub?gid=1768652951&single=true&output=csv"
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=551519505&single=true&output=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
