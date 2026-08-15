@@ -5,7 +5,7 @@ st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- TVOJE ADRESY ---
 URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
-URL_TABULKY = "https://docs.google.com/spreadsheets/d/1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8/edit?gid=1768652951#gid=1768652951"
+URL_TABULKY = "https://docs.google.com/spreadsheets/d/1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8/edit"
 
 st.title("🏋️ Gym Progres - Stabilný prístup")
 
