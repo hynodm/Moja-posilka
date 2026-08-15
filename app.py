@@ -9,8 +9,7 @@ from datetime import datetime
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
-# Použijeme pôvodnú URL formulára (zmeň len koniec z formResponse na formResponse alebo nechaj ako je, zápis spravíme cez GET)
-BASE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
 
 ENTRY_DATUM = "entry.1160346068"
 ENTRY_KATEGORIA = "entry.312830153"
@@ -38,18 +37,18 @@ with st.form("gym_form", clear_on_submit=True):
         else:
             dnes = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
-            # Parametre pre GET požiadavku (obíde blokovanie 401 aj Apps Script)
+            # Parametre pre GET požiadavku, ktorá obíde akékoľvek blokovanie
             params = {
                 ENTRY_DATUM: dnes,
                 ENTRY_KATEGORIA: kat,
                 ENTRY_CVIK: cvik,
                 ENTRY_VAHA: str(vaha),
-                ENTRY_OPAK: str(opak),
-                "submit": "Submit"
+                ENTRY_OPAK: str(opak)
             }
             try:
                 headers = {"User-Agent": "Mozilla/5.0"}
-                res = requests.get(BASE_FORM_URL, params=params, headers=headers)
+                # Použijeme GET namiesto POST, čo Google Forms pre zápis cez API akceptuje bez 401
+                res = requests.get(FORM_URL, params=params, headers=headers)
                 
                 if res.status_code == 200:
                     st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
