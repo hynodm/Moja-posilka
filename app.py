@@ -9,7 +9,7 @@ st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
 # --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
 # Adresa pre odosielanie dát z formulára
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse""
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_30Zww5jLe9ZKzjgQ/formResponse"
 
 # Mapovanie ID políčok z tvojho formulára
 ENTRY_DATUM = "entry.1160346068"
