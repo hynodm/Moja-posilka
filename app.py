@@ -67,17 +67,8 @@ try:
         df = pd.read_csv(csv_data)
         df.columns = [str(c).strip().replace('"', '') for c in df.columns]
         
-        # Presné nájdenie stĺpca s dátumom/časom
-        date_col = None
-        for c in df.columns:
-            cl = c.lower()
-            if "čas" in cl or "datum" in cl or "date" in cl or "timestamp" in cl:
-                date_col = c
-                break
-        
-        if not date_col:
-            date_col = df.columns[0]
-
+        # Prvý stĺpec je vždy dátum/čas (Časová pečiatka)
+        date_col = df.columns[0]
         kat_col = next((c for c in df.columns if "kateg" in c.lower()), df.columns[1])
         
         # Prevod na dátum a vyfiltrovanie posledného dňa
