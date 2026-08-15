@@ -43,12 +43,17 @@ with st.form("gym_form", clear_on_submit=True):
                 ENTRY_VAHA: str(vaha),
                 ENTRY_OPAK: str(opak)
             }
+            # Pridáme User-Agent hlavičku, aby Google formulár nezamietol požiadavku
+            headers = {"User-Agent": "Mozilla/5.0"}
             try:
-                res = requests.post(FORM_URL, data=payload)
-                res.raise_for_status()
-                st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
-                time.sleep(1)
-                st.rerun()
+                res = requests.post(FORM_URL, data=payload, headers=headers)
+                # Google formuláre často vracia kód 200 alebo 305/302 pri úspešnom zápise
+                if res.status_code in [200, 302, 303]:
+                    st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    res.raise_for_status()
             except Exception as e:
                 st.error(f"Chyba pri zápise: {e}")
 
