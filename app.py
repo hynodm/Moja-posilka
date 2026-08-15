@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import io
 import time
 from datetime import datetime
 
@@ -10,18 +11,15 @@ st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 # --- 2. KONFIGURÁCIA GOOGLE FORMULÁRA ---
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/formResponse"
 
-# Mapovanie ID políčok z vášho formulára
 ENTRY_DATUM = "entry.1160346068"
 ENTRY_KATEGORIA = "entry.312830153"
 ENTRY_CVIK = "entry.83240949"
 ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
-# Odkaz na CSV pre načítanie histórie z Google Tabuľky
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLidDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLidDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUmb3-_0/pub?gid=1768652951&single=true&output=csv"
+
 st.title("🏋️ Môj Gym Progres")
-
-
 
 # --- 3. FORMULÁR PRE ZÁPIS ---
 kat = st.radio("Vyber kategóriu", ["Ostatné", "Ruky a nohy"], horizontal=True)
@@ -60,36 +58,43 @@ st.divider()
 
 # --- 4. ZOBRAZENIE HISTÓRIE ---
 try:
-    df = pd.read_csv(CSV_URL)
-    df.columns = [c.strip() for c in df.columns]
+    # Stiahnutie CSV obsahu pomocou requests
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(CSV_URL, headers=headers)
     
-    # Prispôsobenie názvov stĺpcov
-    col_map = {}
-    for c in df.columns:
-        cl = c.lower()
-        if "kateg" in cl: col_map[c] = "Kategória"
-        elif "cvik" in cl: col_map[c] = "Cvik"
-        elif "váha" in cl or "vaha" in cl: col_map[c] = "Váha (kg)"
-        elif "opak" in cl: col_map[c] = "Opakovania"
-        elif "dátum" in cl or "datum" in cl or "čas" in cl: col_map[c] = "Dátum"
-    
-    df = df.rename(columns=col_map)
-    
-    tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
-    
-    with tab1:
-        df_ruky = df[df["Kategória"] == "Ruky a nohy"] if "Kategória" in df.columns else pd.DataFrame()
-        if not df_ruky.empty:
-            st.dataframe(df_ruky[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
-        else:
-            st.info("Žiadne dáta v kategórii Ruky a nohy.")
-            
-    with tab2:
-        df_ost = df[df["Kategória"] == "Ostatné"] if "Kategória" in df.columns else pd.DataFrame()
-        if not df_ost.empty:
-            st.dataframe(df_ost[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
-        else:
-            st.info("Žiadne dáta v kategórii Ostatné.")
+    if response.status_code == 200:
+        csv_data = io.StringIO(response.text)
+        df = pd.read_csv(csv_data)
+        df.columns = [c.strip() for c in df.columns]
+        
+        col_map = {}
+        for c in df.columns:
+            cl = c.lower()
+            if "kateg" in cl: col_map[c] = "Kategória"
+            elif "cvik" in cl: col_map[c] = "Cvik"
+            elif "váha" in cl or "vaha" in cl: col_map[c] = "Váha (kg)"
+            elif "opak" in cl: col_map[c] = "Opakovania"
+            elif "dátum" in cl or "datum" in cl or "čas" in cl: col_map[c] = "Dátum"
+        
+        df = df.rename(columns=col_map)
+        
+        tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
+        
+        with tab1:
+            df_ruky = df[df["Kategória"] == "Ruky a nohy"] if "Kategória" in df.columns else pd.DataFrame()
+            if not df_ruky.empty:
+                st.dataframe(df_ruky[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
+            else:
+                st.info("Žiadne dáta v kategórii Ruky a nohy.")
+                
+        with tab2:
+            df_ost = df[df["Kategória"] == "Ostatné"] if "Kategória" in df.columns else pd.DataFrame()
+            if not df_ost.empty:
+                st.dataframe(df_ost[["Dátum", "Cvik", "Váha (kg)", "Opakovania"]], use_container_width=True)
+            else:
+                st.info("Žiadne dáta v kategórii Ostatné.")
+    else:
+        st.error(f"Nepodarilo sa načítať históriu z Google (HTTP {response.status_code}).")
 
 except Exception as e:
-    st.error(f"Nepodarilo sa načítať históriu: {e}")
+    st.error(f"Chyba pri spracovaní histórie: {e}")
