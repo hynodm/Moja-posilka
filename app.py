@@ -18,7 +18,7 @@ ENTRY_VAHA = "entry.1078103613"
 ENTRY_OPAK = "entry.166466953"
 
 # Odkaz na CSV pre načítanie histórie z Google Tabuľky
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLidDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUmb3-_0/pub?output=csv"
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLidDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUmb3-_0/pub?gid=551519505&single=true&output=csv"
 
 st.title("🏋️ Môj Gym Progres")
 
