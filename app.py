@@ -45,18 +45,16 @@ with st.form("gym_form", clear_on_submit=True):
             }
             try:
                 res = requests.post(FORM_URL, data=payload)
-                if res.status_code == 200:
-                    st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error(f"Chyba pri zápise: HTTP {res.status_code}")
+                res.raise_for_status()
+                st.success(f"Uložené: {cvik} - {vaha} kg x {opak}")
+                time.sleep(1)
+                st.rerun()
             except Exception as e:
-                st.error(f"Chyba spojenia: {e}")
+                st.error(f"Chyba pri zápise: {e}")
 
 st.divider()
 
-# --- 4. ZOBRAZENIE HISTÓRIE (LEN POSLEDNÝ DEŇ) ---
+# --- 4. ZOBRAZENIE HISTÓRIE ---
 try:
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(CSV_URL, headers=headers)
@@ -67,32 +65,42 @@ try:
         df.columns = [str(c).strip().replace('"', '') for c in df.columns]
         
         date_col = df.columns[0]
-        
-        # Zoberieme dátum posledného riadku
         posledny_riadok_datum = str(df.iloc[-1][date_col]).split(" ")[0]
         df_today = df[df[date_col].astype(str).str.startswith(posledny_riadok_datum)]
 
         st.subheader(f"📅 Záznamy z posledného tréningu ({posledny_riadok_datum})")
 
-        # Bezpečné spojenie všetkých stĺpcov na text bez ohľadu na typy dát
-        df_text = df_today.astype(str).agg(lambda x: ' '.join(x.dropna().astype(str)), axis=1).str.lower()
-        
-        df_ruky = df_today[df_text.str.contains("ruky", na=False)]
-        df_ost = df_today[~df_text.str.contains("ruky", na=False)]
-
         tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
         
+        # Nájdeme stĺpec, kde sa nachádza text kategórie (hľadáme stĺpec s hodnotami "Ostatné" alebo "Ruky a nohy")
+        cat_column = None
+        for col in df_today.columns:
+            vals = df_today[col].astype(str).str.lower()
+            if vals.str.contains("ostatné|ruky", regex=True).any():
+                cat_column = col
+                break
+
         with tab1:
+            if cat_column:
+                df_ruky = df_today[df_today[cat_column].astype(str).str.contains("ruky", case=False, na=False)]
+            else:
+                df_ruky = pd.DataFrame()
+                
             if not df_ruky.empty:
                 st.dataframe(df_ruky, use_container_width=True)
             else:
-                st.info("Žiadne záznamy pre 'Ruky a nohy'.")
+                st.info("Žiadne záznamy v kategórii 'Ruky a nohy' pre tento deň.")
                 
         with tab2:
+            if cat_column:
+                df_ost = df_today[df_today[cat_column].astype(str).str.contains("ostat", case=False, na=False)]
+            else:
+                df_ost = df_today # ak nenájde stĺpec, ukáže všetko
+                
             if not df_ost.empty:
                 st.dataframe(df_ost, use_container_width=True)
             else:
-                st.info("Žiadne záznamy pre 'Ostatné'.")
+                st.info("Žiadne záznamy v kategórii 'Ostatné' pre tento deň.")
             
     else:
         st.error(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}).")
