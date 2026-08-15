@@ -54,6 +54,9 @@ with st.form("gym_form", clear_on_submit=True):
                     st.error(f"Chyba pri zápise: HTTP {res.status_code}")
             except Exception as e:
                 st.error(f"Chyba spojenia: {e}")
+
+st.divider()
+
 # --- 4. ZOBRAZENIE HISTÓRIE (LEN POSLEDNÝ DEŇ) ---
 try:
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -64,8 +67,17 @@ try:
         df = pd.read_csv(csv_data)
         df.columns = [str(c).strip().replace('"', '') for c in df.columns]
         
-        # Nájdenie stĺpca s dátumom a kategóriou
-        date_col = next((c for c in df.columns if "datum" in c.lower() or "čas" in c.lower()), df.columns[0])
+        # Presné nájdenie stĺpca s dátumom/časom
+        date_col = None
+        for c in df.columns:
+            cl = c.lower()
+            if "čas" in cl or "datum" in cl or "date" in cl or "timestamp" in cl:
+                date_col = c
+                break
+        
+        if not date_col:
+            date_col = df.columns[0]
+
         kat_col = next((c for c in df.columns if "kateg" in c.lower()), df.columns[1])
         
         # Prevod na dátum a vyfiltrovanie posledného dňa
