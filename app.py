@@ -1,19 +1,20 @@
 import streamlit as st
 import pandas as pd
-import requests
-import io
 
 # 1. NASTAVENIE STRÁNKY
 st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 
-# --- TVOJE SPRÁVNE ADRESY ---
+# --- TVOJE ADRESY ---
 URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pub?gid=1768652951&single=true&output=csv"
+
+# Odkaz priamo na tvoju Google tabuľku (export do CSV cez base prepojenie)
+# ID tabuľky: 1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8
+CSV_URL = "https://docs.google.com/spreadsheets/d/1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8/export?format=csv&gid=1768652951"
 
 st.title("🏋️ Gym Progres - Stabilný prístup")
 
 # --- HLAVNÁ ČASŤ ---
-st.info("Aplikácia využíva oficiálny formulár na zápis a priamo načítava dáta z publikovanej tabuľky.")
+st.info("Aplikácia využíva oficiálny formulár na zápis a priamo načítava dáta z tabuľky.")
 
 col1, col2 = st.columns(2)
 
@@ -30,14 +31,9 @@ st.divider()
 
 # --- AUTOMATICKÉ ZOBRAZENIE HISTÓRIE ---
 try:
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(CSV_URL, headers=headers)
-    
-    if response.status_code == 200:
-        csv_data = io.StringIO(response.text)
-        df = pd.read_csv(csv_data)
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.warning(f"Nepodarilo sa načítať dáta (HTTP {response.status_code}). Uistite sa, že hárkový list je zverejnený ako CSV.")
+    # Priamy export tabuľky do CSV formátu (funguje, ak má tabuľka zapnuté zdieľanie "Každý, kto má odkaz")
+    df = pd.read_csv(CSV_URL)
+    st.dataframe(df, use_container_width=True)
 except Exception as e:
-    st.error(f"Chyba pri načítavaní: {e}")
+    st.warning("Zatiaľ sa nepodarilo načítať dáta. Uistite sa, že Google tabuľka je zdieľaná pre 'Každý, kto má odkaz'.")
+    st.caption(f"Detail chyby: {e}")
