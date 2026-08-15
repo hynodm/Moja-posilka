@@ -74,11 +74,11 @@ try:
 
         st.subheader(f"📅 Záznamy z posledného tréningu ({posledny_riadok_datum})")
 
-        # Spojíme celý riadok do jedného textu, aby sme spoľahlivo našli kategóriu kdekoľvek
-        df_text = df_today.astype(str).agg(' '.join, axis=1).str.lower()
+        # Bezpečné spojenie všetkých stĺpcov na text bez ohľadu na typy dát
+        df_text = df_today.astype(str).agg(lambda x: ' '.join(x.dropna().astype(str)), axis=1).str.lower()
         
         df_ruky = df_today[df_text.str.contains("ruky", na=False)]
-        df_ost = df_today[~df_text.str.contains("ruky", na=False)] # Všetko ostatné
+        df_ost = df_today[~df_text.str.contains("ruky", na=False)]
 
         tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
         
