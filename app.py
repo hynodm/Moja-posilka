@@ -7,14 +7,13 @@ st.set_page_config(page_title="Gym Progres", layout="wide", page_icon="🏋️")
 # --- TVOJE ADRESY ---
 URL_FORMULARA = "https://docs.google.com/forms/d/e/1FAIpQLSe_bSMHDGEvmPZUP4ZBQ2nq-Yos_3OZww5jLe9ZKzjgQk4W0A/viewform"
 
-# Odkaz priamo na tvoju Google tabuľku (export do CSV cez base prepojenie)
-# ID tabuľky: 1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8
-CSV_URL = "https://docs.google.com/spreadsheets/d/1K81RIVLwfOKGap8d-1_ERDJvo8CBTWVTDsQZKMOFq8/export?format=csv&gid=1768652951"
+# Použijeme webový pub odkaz na celú tabuľku (ten, ktorý Google vygeneruje ako prvý)
+WEB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLIdDAemHUDjRbs4brpOvaMqO_Bzbn3pkMhq64HfU_iQJqRMbGVe1bka4RV5pyZDUqvjzAUumb3-_0/pubhtml"
 
 st.title("🏋️ Gym Progres - Stabilný prístup")
 
 # --- HLAVNÁ ČASŤ ---
-st.info("Aplikácia využíva oficiálny formulár na zápis a priamo načítava dáta z tabuľky.")
+st.info("Aplikácia využíva oficiálny formulár na zápis a načítava dáta z tabuľky.")
 
 col1, col2 = st.columns(2)
 
@@ -25,15 +24,23 @@ with col1:
 
 with col2:
     st.subheader("Rýchly náhľad tabuľky")
-    st.write("Aktuálne dáta načítané z tvojho dokumentu:")
+    st.write("Aktuálne dáta:")
 
 st.divider()
 
 # --- AUTOMATICKÉ ZOBRAZENIE HISTÓRIE ---
 try:
-    # Priamy export tabuľky do CSV formátu (funguje, ak má tabuľka zapnuté zdieľanie "Každý, kto má odkaz")
-    df = pd.read_csv(CSV_URL)
-    st.dataframe(df, use_container_width=True)
+    # Načítanie tabuľki priamo z publikovanej HTML stránky
+    df_list = pd.read_html(WEB_URL)
+    if df_list:
+        df = df_list[0]
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.warning("V tabuľke sa nenašli žiadne dáta.")
 except Exception as e:
-    st.warning("Zatiaľ sa nepodarilo načítať dáta. Uistite sa, že Google tabuľka je zdieľaná pre 'Každý, kto má odkaz'.")
-    st.caption(f"Detail chyby: {e}")
+    st.warning("Tabuľka ešte nie je publikovaná na web. Pre zobrazenie údajov urobte toto:")
+    st.markdown("""
+    1. Otvorte svoju Google tabuľku v počítači.
+    2. Hore kliknite na **Súbor** -> **Zdieľať** -> **Publikovať na web**.
+    3. Kliknite na veľké zelené tlačidlo **Publikovať**.
+    """)
