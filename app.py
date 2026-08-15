@@ -65,36 +65,43 @@ try:
     if response.status_code == 200:
         csv_data = io.StringIO(response.text)
         df = pd.read_csv(csv_data)
-        df.columns = [c.strip().replace('"', '') for c in df.columns]
         
-        col_map = {}
+        # Očistenie názvov stĺpcov
+        df.columns = [str(c).strip().replace('"', '') for c in df.columns]
+        
+        # Flexibilné hľadanie stĺpca kategórie
+        kat_col = None
         for c in df.columns:
-            cl = c.lower()
-            if "kateg" in cl: col_map[c] = "Kategória"
-            elif "cvik" in cl: col_map[c] = "Cvik"
-            elif "váha" in cl or "vaha" in cl: col_map[c] = "Váha (kg)"
-            elif "opak" in cl: col_map[c] = "Opakovania"
-            elif "dátum" in cl or "datum" in cl or "čas" in cl: col_map[c] = "Dátum"
-        
-        df = df.rename(columns=col_map)
-        
+            if "kateg" in c.lower():
+                kat_col = c
+                break
+
         tab1, tab2 = st.tabs(["🏋️ Ruky a nohy", "🥊 Ostatné"])
         
         with tab1:
-            df_ruky = df[df["Kategória"] == "Ruky a nohy"] if "Kategória" in df.columns else pd.DataFrame()
-            if not df_ruky.empty:
-                cols_to_show = [c for c in ["Dátum", "Cvik", "Váha (kg)", "Opakovania"] if c in df_ruky.columns]
-                st.dataframe(df_ruky[cols_to_show], use_container_width=True)
+            if kat_col:
+                # Porovnanie bez ohľadu na veľké/malé písmená
+                df_ruky = df[df[kat_col].astype(str).str.contains("ruky", case=False, na=False)]
             else:
-                st.info("Žiadne dáta v kategórii Ruky a nohy.")
+                df_ruky = pd.DataFrame()
+                
+            if not df_ruky.empty:
+                st.dataframe(df_ruky, use_container_width=True)
+            else:
+                st.info("Nenašli sa dáta pre 'Ruky a nohy'. Zobrazujem celú tabuľku:")
+                st.dataframe(df, use_container_width=True)
                 
         with tab2:
-            df_ost = df[df["Kategória"] == "Ostatné"] if "Kategória" in df.columns else pd.DataFrame()
-            if not df_ost.empty:
-                cols_to_show = [c for c in ["Dátum", "Cvik", "Váha (kg)", "Opakovania"] if c in df_ost.columns]
-                st.dataframe(df_ost[cols_to_show], use_container_width=True)
+            if kat_col:
+                df_ost = df[df[kat_col].astype(str).str.contains("ostat", case=False, na=False)]
             else:
-                st.info("Žiadne dáta v kategórii Ostatné.")
+                df_ost = pd.DataFrame()
+                
+            if not df_ost.empty:
+                st.dataframe(df_ost, use_container_width=True)
+            else:
+                st.info("Nenašli sa dáta pre 'Ostatné'. Zobrazujem celú tabuľku:")
+                st.dataframe(df, use_container_width=True)
     else:
         st.error(f"Nepodarilo sa načítať históriu z Google (HTTP {response.status_code}).")
 
